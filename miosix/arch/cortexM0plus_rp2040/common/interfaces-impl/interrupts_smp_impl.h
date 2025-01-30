@@ -33,8 +33,7 @@ inline void globalInterruptLock() noexcept
 {
     for(;;)
     {
-        unsigned long lock=sio_hw->spinlock[0];
-        if(lock) break;
+        if(sio_hw->spinlock[0]) break;
         __WFE();
     }
     __DSB();
@@ -43,7 +42,7 @@ inline void globalInterruptLock() noexcept
 inline void globalInterruptUnlock() noexcept
 {
     __DSB();
-    sio_hw->spinlock[0]=0;
+    sio_hw->spinlock[0]=1;
     __SEV();
 }
 

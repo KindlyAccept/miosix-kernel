@@ -271,8 +271,7 @@ void IRQmemoryAndClockInit()
         padsbank0_hw->io[i]=toUint(Mode::DISABLED);
     
     //QUIRK: You would expect the hardware spinlocks to be reset on a CPU
-    //reset but they are not. To release a spinlock you have to write something
-    //non-zero!
+    //reset but they are not.
     for(unsigned int i=0; i<32; i++) sio_hw->spinlock[i]=1;
 
     // Setup clock generation
