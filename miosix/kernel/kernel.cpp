@@ -179,8 +179,13 @@ void enableInterrupts()
     #ifdef WITH_SMP
         globalIntrNestLockHoldingCore=0xFF;
     #endif
+        // HACK: During startup, the C++ constructors will be invoked before
+        // the kernel is fully initialized. This process will take the
+        // interruptLock and release it, but as the kernel is still not fully
+        // up we do not want to actually disable interrupts. So only
+        // enable interrupts if the kernel is already started.
         if(kernelStarted==true) globalInterruptEnableUnlock();
-        else globalInterruptUnlock();
+        else IRQglobalInterruptUnlock();
     }
 }
 

@@ -36,7 +36,8 @@
 
 /**
  * \file cpu_const.h
- * This file should contain the following constants describing CPU properties:
+ * The implementation of this file should contain the following constants
+ * describing CPU properties:
  *
  * Size in words of vector to store CPU context during context switch.
  * const unsigned char CTXSAVE_SIZE=...;
@@ -56,8 +57,11 @@
 
 namespace miosix {
 
+/**
+ * Returns a numeric ID for the current core. On single-core platforms it
+ * always returns zero.
+ */
 inline unsigned char getCurrentCoreId();
-
 #ifndef WITH_SMP
 inline unsigned char getCurrentCoreId() { return 0; }
 #endif

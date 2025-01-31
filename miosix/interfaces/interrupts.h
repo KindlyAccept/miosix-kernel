@@ -68,6 +68,11 @@
 namespace miosix {
 
 /**
+ * @name Dynamic Interrupt Handler Registration
+ * @{
+ */
+
+/**
  * Register an interrupt handler.
  * \param id platform-dependent id of the peripheral for which the handler has
  * to be registered.
@@ -174,6 +179,15 @@ inline void IRQunregisterIrq(unsigned int id, void (T::*mfn)(), T *object) noexc
 bool IRQisIrqRegistered(unsigned int id) noexcept;
 
 /**
+ * @}
+ */
+
+/**
+ * @name Primitives for Interrupt Handlers
+ * @{
+ */
+
+/**
  * This function is used to develop interrupt driven peripheral drivers.<br>
  * This function can be called from within an interrupt or with interrupts
  * disabled to invoke the scheduler. The request is not performed immediately,
@@ -227,30 +241,87 @@ inline void fastEnableInterrupts() noexcept;
  * Provides a way to know if interrupts are enabled or not.
  *
  * \return true if interrupts are enabled
+ * \warning Using this function is discouraged
  */
 bool areInterruptsEnabled() noexcept;
 
-inline void globalInterruptLock() noexcept;
-inline void globalInterruptUnlock() noexcept;
-
+/**
+ * Acquires the global interrupt lock -- a critical section in mutual exclusion
+ * with all interrupt handlers -- from an interrupt handler or with interrupts
+ * already disabled.
+ * 
+ * On platforms with support for SMP, an interrupt handler is not in mutual
+ * exclusion with code which runs on the other cores (including other interrupt
+ * handlers running in parallel). The global interrupt lock is a spinlock used
+ * to ensure this mutual exclusion.
+ * 
+ * On single-core platforms, this function has no effect.
+ * 
+ * \warning This function can be used only in an interrupt handler or with
+ * interrupts disabled.
+ */
+inline void IRQglobalInterruptLock() noexcept;
 #ifndef WITH_SMP
-
-inline void globalInterruptLock() noexcept {}
-inline void globalInterruptUnlock() noexcept {}
-
+inline void IRQglobalInterruptLock() noexcept {}
 #endif
 
+/**
+ * Releases the global interrupt lock -- a critical section in mutual exclusion
+ * with all interrupt handlers -- from an interrupt handler or with interrupts
+ * already disabled.
+ * 
+ * On platforms with support for SMP, an interrupt handler is not in mutual
+ * exclusion with code which runs on the other cores (including other interrupt
+ * handlers running in parallel). The global interrupt lock is a spinlock used
+ * to ensure this mutual exclusion.
+ * 
+ * On single-core platforms, this function has no effect.
+ * 
+ * \warning This function can be used only in an interrupt handler or with
+ * interrupts disabled.
+ */
+inline void IRQglobalInterruptUnlock() noexcept;
+#ifndef WITH_SMP
+inline void IRQglobalInterruptUnlock() noexcept {}
+#endif
+
+/**
+ * Acquires the global interrupt lock -- a critical section in mutual exclusion
+ * with all interrupt handlers -- from a thread context.
+ * 
+ * On platforms with support for SMP, an interrupt handler is not in mutual
+ * exclusion with code which runs on the other cores (including other interrupt
+ * handlers running in parallel). The global interrupt lock is a spinlock used
+ * to ensure this mutual exclusion.
+ * 
+ * On single-core platforms, this function simply disables interrupts.
+ */
 inline void globalInterruptDisableLock() noexcept
 {
     fastDisableInterrupts();
-    globalInterruptLock();
+    IRQglobalInterruptLock();
 }
 
+/**
+ * Releases the global interrupt lock -- a critical section in mutual exclusion
+ * with all interrupt handlers -- from a thread context.
+ * 
+ * On platforms with support for SMP, an interrupt handler is not in mutual
+ * exclusion with code which runs on the other cores (including other interrupt
+ * handlers running in parallel). The global interrupt lock is a spinlock used
+ * to ensure this mutual exclusion.
+ * 
+ * On single-core platforms, this function simply enables interrupts.
+ */
 inline void globalInterruptEnableUnlock() noexcept
 {
-    globalInterruptUnlock();
+    IRQglobalInterruptUnlock();
     fastEnableInterrupts();
 }
+
+/**
+ * @}
+ */
 
 } //namespace miosix
 

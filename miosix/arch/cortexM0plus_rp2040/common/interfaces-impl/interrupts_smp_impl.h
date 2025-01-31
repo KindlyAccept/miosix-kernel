@@ -29,7 +29,7 @@
 
 namespace miosix {
 
-inline void globalInterruptLock() noexcept
+inline void IRQglobalInterruptLock() noexcept
 {
     for(;;)
     {
@@ -39,7 +39,7 @@ inline void globalInterruptLock() noexcept
     __DSB();
 }
 
-inline void globalInterruptUnlock() noexcept
+inline void IRQglobalInterruptUnlock() noexcept
 {
     __DSB();
     sio_hw->spinlock[0]=1;
