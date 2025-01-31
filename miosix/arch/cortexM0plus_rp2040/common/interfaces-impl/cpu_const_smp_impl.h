@@ -31,6 +31,8 @@
 
 namespace miosix {
 
+const unsigned char CPU_NUM_CORES=2;
+
 inline unsigned char getCurrentCoreId()
 {
     return get_core_num();

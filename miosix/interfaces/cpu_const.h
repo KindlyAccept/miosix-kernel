@@ -53,13 +53,22 @@
  *
  * Offset in words to retrieve the thread stack pointer in ctxsave
  * const unsigned int STACK_OFFSET_IN_CTXSAVE=...;
+ * 
+ * Number of cores (must not be defined when WITH_SMP is not defined)
+ * const unsigned char CPU_NUM_CORES=...;
  */
 
 namespace miosix {
 
+#ifndef WITH_SMP
+const unsigned char CPU_NUM_CORES=1;
+#endif
+
 /**
- * Returns a numeric ID for the current core. On single-core platforms it
- * always returns zero.
+ * Returns a numeric ID for the current core. This function shall:
+ * - Always return 0 on single core platforms
+ * - Always return 0 when executed on the core which handles the boot process
+ * - Never return a number greater or equal than CPU_NUM_CORES
  */
 inline unsigned char getCurrentCoreId();
 #ifndef WITH_SMP
