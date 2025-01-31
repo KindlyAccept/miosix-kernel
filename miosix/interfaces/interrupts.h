@@ -286,6 +286,21 @@ inline void IRQglobalInterruptUnlock() noexcept {}
 #endif
 
 /**
+ * This class is a RAII class for acquiring the global interrupt lock from an
+ * interrupt handler.
+ */
+class IRQGlobalInterruptLock
+{
+public:
+    IRQGlobalInterruptLock()  { IRQglobalInterruptLock(); }
+    ~IRQGlobalInterruptLock() { IRQglobalInterruptUnlock(); }
+private:
+    //Unwanted methods
+    IRQGlobalInterruptLock(const IRQGlobalInterruptLock& l);
+    IRQGlobalInterruptLock& operator= (const IRQGlobalInterruptLock& l);
+};
+
+/**
  * Acquires the global interrupt lock -- a critical section in mutual exclusion
  * with all interrupt handlers -- from a thread context.
  * 
@@ -318,6 +333,36 @@ inline void globalInterruptEnableUnlock() noexcept
     IRQglobalInterruptUnlock();
     fastEnableInterrupts();
 }
+
+/**
+ * This class is a RAII class for acquiring the global interrupt lock from a
+ * thread context.
+ */
+class GlobalInterruptLock
+{
+public:
+    GlobalInterruptLock()  { globalInterruptDisableLock(); }
+    ~GlobalInterruptLock() { globalInterruptEnableUnlock(); }
+private:
+    //Unwanted methods
+    GlobalInterruptLock(const GlobalInterruptLock& l);
+    GlobalInterruptLock& operator= (const GlobalInterruptLock& l);
+};
+
+/**
+ * This class is a RAII class for temporarily releasing the global interrupt
+ * lock from a thread context.
+ */
+class GlobalInterruptUnlock
+{
+public:
+    GlobalInterruptUnlock(GlobalInterruptLock&) { globalInterruptEnableUnlock(); }
+    ~GlobalInterruptUnlock() { globalInterruptDisableLock(); }
+private:
+    //Unwanted methods
+    GlobalInterruptUnlock(const GlobalInterruptUnlock& l);
+    GlobalInterruptUnlock& operator= (const GlobalInterruptUnlock& l);
+};
 
 /**
  * @}
