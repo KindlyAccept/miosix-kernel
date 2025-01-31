@@ -1,5 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2025 by Federico Terraneo, Daniele Cattaneo             *
+ *   Copyright (C) 2013-2024 by Terraneo Federico                          *
+ *   Copyright (C) 2025 by Daniele Cattaneo                                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,20 +26,71 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#pragma once
-
+#include "interfaces/arch_registers.h"
 #include "hw_spinlock.h"
 
 namespace miosix {
 
-inline void IRQglobalInterruptLock() noexcept
+using AtomicsLock = FastHwSpinlock<1>;
+
+int _atomicSwapImpl(volatile int *p, int v)
 {
-    IRQhwSpinlockAcquire(0);
+    int result;
+    {
+        AtomicsLock lock;
+        result = *p;
+        *p = v;
+    }
+    asm volatile("":::"memory");
+    return result;
 }
 
-inline void IRQglobalInterruptUnlock() noexcept
+void _atomicAddImpl(volatile int *p, int incr)
 {
-    IRQhwSpinlockRelease(0);
+    {
+        AtomicsLock lock;
+        *p += incr;
+    }
+    asm volatile("":::"memory");
 }
 
-} // namespace miosix
+int _atomicAddExchangeImpl(volatile int *p, int incr)
+{
+    int result;
+    {
+        AtomicsLock lock;
+        result = *p;
+        *p += incr;
+    }
+    asm volatile("":::"memory");
+    return result;
+}
+
+int _atomicCompareAndSwapImpl(volatile int *p, int prev, int next)
+{
+    int result;
+    {
+        AtomicsLock lock;
+        result = *p;
+        if(*p == prev) *p = next;
+    }
+    asm volatile("":::"memory");
+    return result;
+}
+
+void *_atomicFetchAndIncrementImpl(void * const volatile * p, int offset,
+        int incr)
+{
+    void *result;
+    {
+        AtomicsLock lock;
+        result = *p;
+        if(result == 0) return 0;
+        volatile uint32_t *pt = reinterpret_cast<uint32_t*>(result) + offset;
+        *pt += incr;
+    }
+    asm volatile("":::"memory");
+    return result;
+}
+
+} //namespace miosix

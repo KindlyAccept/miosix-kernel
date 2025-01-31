@@ -1,5 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2025 by Federico Terraneo, Daniele Cattaneo             *
+ *   Copyright (C) 2013-2024 by Terraneo Federico                          *
+ *   Copyright (C) 2025 by Daniele Cattaneo                                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -27,18 +28,46 @@
 
 #pragma once
 
-#include "hw_spinlock.h"
+/**
+ * Cortex M0/M0+ architectures does not support __LDREXW, __STREXW and __CLREX
+ * instructions, so we have to redefine the atomic operations using functions
+ * that disable the interrupts.
+ * 
+ * TODO: actually this implementation is not very efficient
+ */
 
 namespace miosix {
 
-inline void IRQglobalInterruptLock() noexcept
+int _atomicSwapImpl(volatile int *p, int v);
+void _atomicAddImpl(volatile int *p, int incr);
+int _atomicAddExchangeImpl(volatile int *p, int incr);
+int _atomicCompareAndSwapImpl(volatile int *p, int prev, int next);
+void *_atomicFetchAndIncrementImpl(void *const volatile *p,int offset,int incr);
+
+inline int atomicSwap(volatile int *p, int v)
 {
-    IRQhwSpinlockAcquire(0);
+    return _atomicSwapImpl(p,v);
 }
 
-inline void IRQglobalInterruptUnlock() noexcept
+inline void atomicAdd(volatile int *p, int incr)
 {
-    IRQhwSpinlockRelease(0);
+    _atomicAddImpl(p,incr);
 }
 
-} // namespace miosix
+inline int atomicAddExchange(volatile int *p, int incr)
+{
+    return _atomicAddExchangeImpl(p,incr);
+}
+
+inline int atomicCompareAndSwap(volatile int *p, int prev, int next)
+{
+    return _atomicCompareAndSwapImpl(p,prev,next);
+}
+
+inline void *atomicFetchAndIncrement(void * const volatile * p, int offset,
+        int incr)
+{
+    return _atomicFetchAndIncrementImpl(p,offset,incr);
+}
+
+} //namespace miosix

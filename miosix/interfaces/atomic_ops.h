@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "config/miosix_settings.h"
+
 /**
  * \addtogroup Interfaces
  * \{
@@ -154,4 +156,8 @@ inline void *atomicFetchAndIncrement(void * const volatile * p, int offset,
  * \}
  */
 
+#ifdef WITH_SMP
+#include "interfaces-impl/atomic_ops_smp_impl.h"
+#else
 #include "interfaces-impl/atomic_ops_impl.h"
+#endif

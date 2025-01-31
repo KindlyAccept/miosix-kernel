@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2025 by Federico Terraneo, Daniele Cattaneo             *
+ *   Copyright (C) 2025 by Federico Terraneo and Daniele Cattaneo          *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,20 +25,26 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#pragma once
-
 #include "hw_spinlock.h"
+#include "interfaces/arch_registers.h"
 
 namespace miosix {
 
-inline void IRQglobalInterruptLock() noexcept
+void IRQhwSpinlockAcquire(unsigned char i) noexcept
 {
-    IRQhwSpinlockAcquire(0);
+    for(;;)
+    {
+        if(sio_hw->spinlock[i]) break;
+        __WFE();
+    }
+    __DSB();
 }
 
-inline void IRQglobalInterruptUnlock() noexcept
+void IRQhwSpinlockRelease(unsigned char i) noexcept
 {
-    IRQhwSpinlockRelease(0);
+    __DSB();
+    sio_hw->spinlock[i]=1;
+    __SEV();
 }
 
 } // namespace miosix
