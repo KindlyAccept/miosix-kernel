@@ -40,44 +40,69 @@
 
 namespace miosix {
 
-// Can't include kernel.h as it would cause an include loop
-void disableInterrupts();
-void enableInterrupts();
+class AtomicsLock
+{
+public:
+    AtomicsLock()
+    {
+        oldInterruptsDisabled=__get_PRIMASK();
+        __disable_irq();
+    }
+
+    ~AtomicsLock()
+    {
+        if(!oldInterruptsDisabled) __enable_irq();
+    }
+
+private:
+    bool oldInterruptsDisabled;
+
+    //Unwanted methods
+    AtomicsLock(const AtomicsLock& l);
+    AtomicsLock& operator= (const AtomicsLock& l);
+};
 
 inline int atomicSwap(volatile int *p, int v)
 {
-    disableInterrupts();
-    int result = *p;
-    *p = v;
-    enableInterrupts();
+    int result;
+    {
+        AtomicsLock lock;
+        result = *p;
+        *p = v;
+    }
     asm volatile("":::"memory");
     return result;
 }
 
 inline void atomicAdd(volatile int *p, int incr)
 {
-    disableInterrupts();
-    *p += incr;
-    enableInterrupts();
+    {
+        AtomicsLock lock;
+        *p += incr;
+    }
     asm volatile("":::"memory");
 }
 
 inline int atomicAddExchange(volatile int *p, int incr)
 {
-    disableInterrupts();
-    int result = *p;
-    *p += incr;
-    enableInterrupts();
+    int result;
+    {
+        AtomicsLock lock;
+        result = *p;
+        *p += incr;
+    }
     asm volatile("":::"memory");
     return result;
 }
 
 inline int atomicCompareAndSwap(volatile int *p, int prev, int next)
 {
-    disableInterrupts();
-    int result = *p;
-    if(*p == prev) *p = next;
-    enableInterrupts();
+    int result;
+    {
+        AtomicsLock lock;
+        result = *p;
+        if(*p == prev) *p = next;
+    }
     asm volatile("":::"memory");
     return result;
 }
@@ -85,18 +110,15 @@ inline int atomicCompareAndSwap(volatile int *p, int prev, int next)
 inline void *atomicFetchAndIncrement(void * const volatile * p, int offset,
         int incr)
 {
-    disableInterrupts();
-    void *result = *p;
-    if(result == 0)
+    void *result;
     {
-        enableInterrupts();
-        return 0;
+        AtomicsLock lock;
+        result = *p;
+        if(result == 0) return 0;
+        volatile uint32_t *pt = reinterpret_cast<uint32_t*>(result) + offset;
+        *pt += incr;
     }
-    volatile uint32_t *pt = reinterpret_cast<uint32_t*>(result) + offset;
-    *pt += incr;
-    enableInterrupts();
     asm volatile("":::"memory");
-
     return result;
 }
 
