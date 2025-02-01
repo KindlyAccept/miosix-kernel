@@ -31,7 +31,7 @@
 
 namespace miosix {
 
-using AtomicsLock = FastHwSpinlock<1>;
+using AtomicsLock = FastHwSpinlock<RP2040HwSpinlocks::Atomics>;
 
 int _atomicSwapImpl(volatile int *p, int v)
 {

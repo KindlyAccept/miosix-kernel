@@ -33,12 +33,12 @@ namespace miosix {
 
 inline void IRQglobalInterruptLock() noexcept
 {
-    IRQhwSpinlockAcquire(0);
+    IRQhwSpinlockAcquire(RP2040HwSpinlocks::GIL);
 }
 
 inline void IRQglobalInterruptUnlock() noexcept
 {
-    IRQhwSpinlockRelease(0);
+    IRQhwSpinlockRelease(RP2040HwSpinlocks::GIL);
 }
 
 } // namespace miosix

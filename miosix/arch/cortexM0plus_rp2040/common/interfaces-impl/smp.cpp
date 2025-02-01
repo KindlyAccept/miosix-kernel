@@ -105,7 +105,7 @@ __attribute__((naked)) void initCore1()
     );
 }
 
-void IRQcontinueInitCore1()
+__attribute__((noreturn)) void IRQcontinueInitCore1()
 {
     // Read main function info from FIFO
     void (*f)(void *)=reinterpret_cast<void (*)(void *)>(fifoReceive());
@@ -117,22 +117,26 @@ void IRQcontinueInitCore1()
     const unsigned int numInterrupts=MIOSIX_NUM_PERIPHERAL_IRQ;
     for(unsigned int i=0;i<numInterrupts;i++)
         NVIC_SetPriority(static_cast<IRQn_Type>(i),defaultIrqPriority);
-    {
-        // Take the GIL with interrupts already disabled. Once we are done with
-        // initialization this will seamlessly re-enable interrupts.
-        GlobalInterruptLock lock;
-        // Register IPI (FIFO) interrupt handler for core 1
-        IRQregisterIrq(SIO_IRQ_PROC1_IRQn,IRQinterProcessorInterruptHandler);
-        // Clear fifo status flags and pending interrupt flag to avoid spurious
-        // interrupts on core 1 side
-        sio_hw->fifo_st=0;
-        NVIC_ClearPendingIRQ(SIO_IRQ_PROC1_IRQn);
-    }
+    // Register IPI (FIFO) interrupt handler for core 1
+    IRQregisterIrq(SIO_IRQ_PROC1_IRQn,IRQinterProcessorInterruptHandler);
+    // Clear fifo status flags and pending interrupt flag to avoid spurious
+    // interrupts on core 1 side
+    sio_hw->fifo_st=0;
+    NVIC_ClearPendingIRQ(SIO_IRQ_PROC1_IRQn);
+    // Signal to the other core that we are done with setup
+    __DSB();
+    (unsigned long)sio_hw->spinlock[RP2040HwSpinlocks::InitCoreSync];
+    __enable_irq();
+    // Call the main function, which shouldn't return. If it does, hang up
     f(arg);
+    for(;;) ;
 }
 
 void IRQinitSMP(void *const stackPtrs[], void (*const mains[])(void *), void *const args[]) noexcept
 {
+    // Ensure the core setup end spinlock is not taken
+    sio_hw->spinlock[RP2040HwSpinlocks::InitCoreSync]=1;
+    __DSB();
     // Send FIFO commands for the bootrom core idling mechanism
     for(;;)
     {
@@ -162,6 +166,10 @@ void IRQinitSMP(void *const stackPtrs[], void (*const mains[])(void *), void *co
     // interrupts on core 0 side
     sio_hw->fifo_st=0;
     NVIC_ClearPendingIRQ(SIO_IRQ_PROC0_IRQn);
+    // Wait until core 1 is done
+    __DSB();
+    while(!(sio_hw->spinlock_st & (1<<RP2040HwSpinlocks::InitCoreSync))) ;
+    sio_hw->spinlock[RP2040HwSpinlocks::InitCoreSync]=1;
 }
 
 void IRQcallOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept
