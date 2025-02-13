@@ -62,6 +62,54 @@ diff -ruN newlib-3.1.0-old/newlib/libc/include/locale.h newlib-3.1.0/newlib/libc
  locale_t newlocale (int, const char *, locale_t);
  void freelocale (locale_t);
  locale_t duplocale (locale_t);
+diff -ruN newlib-3.1.0-old/newlib/libc/include/malloc.h newlib-3.1.0/newlib/libc/include/malloc.h
+--- newlib-3.1.0-old/newlib/libc/include/malloc.h	2019-01-01 05:40:11.000000000 +0100
++++ newlib-3.1.0/newlib/libc/include/malloc.h	2025-02-13 11:27:22.034784831 +0100
+@@ -34,36 +34,36 @@
+ 
+ /* The routines.  */
+ 
+-extern void *malloc (size_t);
++extern void *malloc (size_t) _NOTHROW;
+ #ifdef __CYGWIN__
+ #undef _malloc_r
+ #define _malloc_r(r, s) malloc (s)
+ #else
+-extern void *_malloc_r (struct _reent *, size_t);
++extern void *_malloc_r (struct _reent *, size_t) _NOTHROW;
+ #endif
+ 
+-extern void free (void *);
++extern void free (void *) _NOTHROW;
+ #ifdef __CYGWIN__
+ #undef _free_r
+ #define _free_r(r, p) free (p)
+ #else
+-extern void _free_r (struct _reent *, void *);
++extern void _free_r (struct _reent *, void *) _NOTHROW;
+ #endif
+ 
+-extern void *realloc (void *, size_t);
++extern void *realloc (void *, size_t) _NOTHROW;
+ #ifdef __CYGWIN__
+ #undef _realloc_r
+ #define _realloc_r(r, p, s) realloc (p, s)
+ #else
+-extern void *_realloc_r (struct _reent *, void *, size_t);
++extern void *_realloc_r (struct _reent *, void *, size_t) _NOTHROW;
+ #endif
+ 
+-extern void *calloc (size_t, size_t);
++extern void *calloc (size_t, size_t) _NOTHROW;
+ #ifdef __CYGWIN__
+ #undef _calloc_r
+ #define _calloc_r(r, s1, s2) calloc (s1, s2);
+ #else
+-extern void *_calloc_r (struct _reent *, size_t, size_t);
++extern void *_calloc_r (struct _reent *, size_t, size_t) _NOTHROW;
+ #endif
+ 
+ extern void *memalign (size_t, size_t);
 diff -ruN newlib-3.1.0-old/newlib/libc/include/sys/config.h newlib-3.1.0/newlib/libc/include/sys/config.h
 --- newlib-3.1.0-old/newlib/libc/include/sys/config.h	2019-01-01 05:40:11.000000000 +0100
 +++ newlib-3.1.0/newlib/libc/include/sys/config.h	2024-07-26 22:02:58.645581943 +0200
