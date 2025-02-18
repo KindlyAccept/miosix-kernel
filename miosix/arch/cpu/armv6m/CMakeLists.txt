@@ -23,17 +23,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>
 
-cmake_minimum_required(VERSION 3.16)
+# Set CPU microarchitecture specific include paths
+list(APPEND MIOSIX_ARCH_INC ${MIOSIX_KPATH}/arch/cpu/${MIOSIX_CPU_MICROARCH})
 
-project(BlinkingLED C CXX ASM)
-
-# Set Miosix definitions and options
-add_compile_definitions($<$<COMPILE_LANGUAGE:C,CXX>:MIOSIX_SKIP_SETTINGS_EDIT>)
-set(MIOSIX_OPT_BOARD rp2040_raspberry_pi_pico CACHE STRING "Target board")
-
-add_subdirectory(../.. miosix EXCLUDE_FROM_ALL)
-
-include(LinkTarget)
-
-add_executable(blinking_led simple.cpp)
-miosix_link_target(blinking_led)
+# Select architecture specific files
+list(APPEND MIOSIX_ARCH_SRC
+    ${MIOSIX_KPATH}/arch/cpu/${MIOSIX_CPU_MICROARCH}/interfaces-impl/cpu.cpp
+)

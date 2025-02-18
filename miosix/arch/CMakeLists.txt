@@ -24,6 +24,7 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>
 
 set(MIOSIX_BOARDS
+    rp2040_raspberry_pi_pico
     stm32f407vg_stm32f4discovery
     stm32f429zi_stm32f4discovery
     stm32f767zi_nucleo
@@ -53,6 +54,10 @@ endif()
 
 # Auto guess architecture name from board name
 if(
+    MIOSIX_OPT_BOARD STREQUAL rp2040_raspberry_pi_pico
+)
+    set(MIOSIX_ARCH_NAME cortexM0plus_rp2040)
+elseif(
     MIOSIX_OPT_BOARD STREQUAL stm32f407vg_stm32f4discovery OR
     MIOSIX_OPT_BOARD STREQUAL stm32f429zi_stm32f4discovery
 )
