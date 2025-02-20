@@ -151,18 +151,20 @@ if(MIOSIX_PRINT_BOARD_LIST)
     endforeach()
 endif()
 
+set(MIOSIX_GCC_PATH /opt/arm-miosix-eabi CACHE PATH "Directory of miosix gcc compiler")
+
 # Set multilib paths for Clang
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_include_directories(miosix PUBLIC
-        /opt/arm-miosix-eabi/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi
-        /opt/arm-miosix-eabi/arm-miosix-eabi/include/c++/9.2.0
-        /opt/arm-miosix-eabi/arm-miosix-eabi/include
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include
     )
 
     target_link_directories(miosix PUBLIC
-        /opt/arm-miosix-eabi/arm-miosix-eabi/lib/${MIOSIX_MULTILIB_PATH}
-        /opt/arm-miosix-eabi/lib/gcc/arm-miosix-eabi/9.2.0/${MIOSIX_MULTILIB_PATH}
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib/${MIOSIX_MULTILIB_PATH}
+        ${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/${MIOSIX_MULTILIB_PATH}
     )
 
-    target_link_options(miosix PUBLIC -fuse-ld=/usr/bin/arm-miosix-eabi-ld)
+    target_link_options(miosix PUBLIC -fuse-ld=${MIOSIX_GCC_PATH}/bin/arm-miosix-eabi-ld)
 endif()

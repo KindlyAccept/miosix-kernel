@@ -83,15 +83,15 @@ target_link_options(syscalls INTERFACE ${MIOSIX_PROCESSES_L_FLAGS})
 # Set multilib paths for Clang
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_include_directories(syscalls PUBLIC
-        /opt/arm-miosix-eabi/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi
-        /opt/arm-miosix-eabi/arm-miosix-eabi/include/c++/9.2.0
-        /opt/arm-miosix-eabi/arm-miosix-eabi/include
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include
     )
 
     target_link_directories(syscalls PUBLIC
-        /opt/arm-miosix-eabi/arm-miosix-eabi/lib/${MIOSIX_MULTILIB_PATH}/pie/single-pic-base/
-        /opt/arm-miosix-eabi/lib/gcc/arm-miosix-eabi/9.2.0/${MIOSIX_MULTILIB_PATH}/pie/single-pic-base/
+        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib/${MIOSIX_MULTILIB_PATH}/pie/single-pic-base/
+        ${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/${MIOSIX_MULTILIB_PATH}/pie/single-pic-base/
     )
 
-    target_link_options(miosix PUBLIC -fuse-ld=/usr/bin/arm-miosix-eabi-ld)
+    target_link_options(miosix PUBLIC -fuse-ld=${MIOSIX_GCC_PATH}/bin/arm-miosix-eabi-ld)
 endif()

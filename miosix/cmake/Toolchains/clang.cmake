@@ -42,6 +42,7 @@ set(CMAKE_OBJDUMP      ${MIOSIX_PREFIX}-objdump)
 set(CMAKE_SIZE         ${MIOSIX_PREFIX}-size)
 
 # Optimization flags for each language and build configuration
+set(CMAKE_BUILD_TYPE  "Release")
 set(CMAKE_ASM_FLAGS_DEBUG "")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
