@@ -34,7 +34,7 @@ set(CMAKE_SYSTEM_NAME Miosix)
 set(MIOSIX_PREFIX      arm-miosix-eabi)
 
 # From compiler prefix form the name of the compiler and other tools
-set(CMAKE_ASM_COMPILER ${MIOSIX_PREFIX}-as)
+set(CMAKE_ASM_COMPILER ${MIOSIX_PREFIX}-gcc) #Compiling asm with GCC to allow #ifdef
 set(CMAKE_C_COMPILER   ${MIOSIX_PREFIX}-gcc)
 set(CMAKE_CXX_COMPILER ${MIOSIX_PREFIX}-g++)
 set(CMAKE_AR           ${MIOSIX_PREFIX}-ar)

@@ -1048,8 +1048,8 @@ ifeq ($(ARCH),arm7_lpc2000)
     ## Select appropriate compiler flags for both ASM/C/C++/linker
     CPU := -mcpu=arm7tdmi
     AFLAGS_BASE   := $(CPU)
-    CFLAGS_BASE   += -D_ARCH_ARM7_LPC2000 $(CPU) $(OPT_OPTIMIZATION) -c
-    CXXFLAGS_BASE += -D_ARCH_ARM7_LPC2000 $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+    CFLAGS_BASE   += -D_ARCH_ARM7_LPC2000 $(CPU) $(OPT_OPTIMIZATION)
+    CXXFLAGS_BASE += -D_ARCH_ARM7_LPC2000 $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                       $(OPT_OPTIMIZATION) -nostdlib
@@ -1517,9 +1517,9 @@ else ifeq ($(ARCH),cortexM3_stm32f1)
     CPU := -mcpu=cortex-m3 -mthumb
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM3_STM32F1 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32F1 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -1986,9 +1986,9 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
     CPU := -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM4_STM32F4 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM4_STM32F4 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -2272,9 +2272,9 @@ else ifeq ($(ARCH),cortexM3_stm32f2)
     CPU := -mcpu=cortex-m3 -mthumb
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM3_STM32F2 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32F2 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map         \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)  \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -2374,9 +2374,9 @@ else ifeq ($(ARCH),cortexM3_stm32l1)
     CPU := -mcpu=cortex-m3 -mthumb
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM3_STM32L1 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32L1 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map         \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)  \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -2452,9 +2452,9 @@ else ifeq ($(ARCH),cortexM3_efm32gg)
     ## Select appropriate compiler flags for both ASM/C/C++/linker
     CPU := -mcpu=cortex-m3 -mthumb
     AFLAGS_BASE   := $(CPU)
-    CFLAGS_BASE   += -D_ARCH_CORTEXM3_EFM32GG $(CPU) $(OPT_OPTIMIZATION) -c
+    CFLAGS_BASE   += -D_ARCH_CORTEXM3_EFM32GG $(CPU) $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_EFM32GG $(CPU) $(OPT_OPTIMIZATION) \
-                     $(OPT_EXCEPT) -c
+                     $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -2636,9 +2636,9 @@ else ifeq ($(ARCH),cortexM7_stm32f7)
     ## Select appropriate compiler flags for both ASM/C/C++/linker
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM7_STM32F7 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM7_STM32F7 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map         \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)  \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -2783,9 +2783,9 @@ else ifeq ($(ARCH),cortexM7_stm32h7)
     CPU := -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-d16
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM7_STM32H7 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM7_STM32H7 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map         \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)  \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -2896,9 +2896,9 @@ else ifeq ($(ARCH),cortexM0_stm32f0)
     CPU := -mcpu=cortex-m0 -mthumb
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM0_STM32F0 $(CLOCK_FREQ) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM0_STM32F0 $(CLOCK_FREQ) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -2967,9 +2967,9 @@ else ifeq ($(ARCH),cortexM4_stm32f3)
     CPU := -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM4_STM32F3 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM4_STM32F3 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map                \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)         \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -3069,9 +3069,9 @@ else ifeq ($(ARCH),cortexM4_stm32l4)
     CPU := -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM4_STM32L4 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM4_STM32L4 $(CLOCK_FREQ) $(XRAM) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map                \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)         \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -3140,9 +3140,9 @@ else ifeq ($(ARCH),cortexM4_atsam4l)
     ## Select appropriate compiler flags for both ASM/C/C++/linker
     CPU := -mcpu=cortex-m4 -mthumb
     AFLAGS_BASE   := $(CPU)
-    CFLAGS_BASE   += -D_ARCH_CORTEXM4_ATSAM4L $(CPU) $(OPT_OPTIMIZATION) -c
+    CFLAGS_BASE   += -D_ARCH_CORTEXM4_ATSAM4L $(CPU) $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM4_ATSAM4L $(CPU) $(OPT_OPTIMIZATION) \
-                     $(OPT_EXCEPT) -c
+                     $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map         \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)  \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -3203,9 +3203,9 @@ else ifeq ($(ARCH),cortexM3_efm32g)
     ## Select appropriate compiler flags for both ASM/C/C++/linker
     CPU := -mcpu=cortex-m3 -mthumb
     AFLAGS_BASE   := $(CPU)
-    CFLAGS_BASE   += -D_ARCH_CORTEXM3_EFM32G $(CPU) $(OPT_OPTIMIZATION) -c
+    CFLAGS_BASE   += -D_ARCH_CORTEXM3_EFM32G $(CPU) $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_EFM32G $(CPU) $(OPT_OPTIMIZATION) \
-                     $(OPT_EXCEPT) -c
+                     $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -3309,9 +3309,9 @@ else ifeq ($(ARCH),cortexM0plus_stm32l0)
     CPU := -mcpu=cortex-m0plus -mthumb
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM0PLUS_STM32L0 $(CLOCK_FREQ) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM0PLUS_STM32L0 $(CLOCK_FREQ) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -3376,9 +3376,9 @@ else ifeq ($(ARCH),cortexM0plus_rp2040)
     CPU := -mcpu=cortex-m0plus -mthumb
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM0PLUS_RP2040 $(CLOCK_FREQ) $(CPU) \
-                     $(OPT_OPTIMIZATION) -c
+                     $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM0PLUS_RP2040 $(CLOCK_FREQ) $(CPU) \
-                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map        \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT) \
                      $(OPT_OPTIMIZATION) -nostdlib
@@ -3452,9 +3452,9 @@ else ifeq ($(ARCH),cortexM33_stm32h5)
     CPU := -mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16
     AFLAGS_BASE   := $(CPU)
     CFLAGS_BASE   += -D_ARCH_CORTEXM33_STM32H5 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM33_STM32H5 $(CLOCK_FREQ) $(XRAM) \
-                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT) -c
+                     $(SRAM_BOOT) $(CPU) $(OPT_OPTIMIZATION) $(OPT_EXCEPT)
     LFLAGS_BASE   := $(CPU) -Wl,--gc-sections,-Map,main.map         \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)  \
                      $(OPT_OPTIMIZATION) -nostdlib
