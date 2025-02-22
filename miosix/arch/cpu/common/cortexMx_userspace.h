@@ -38,46 +38,54 @@ namespace miosix {
 
 inline void portableSwitchToUserspace()
 {
-    asm volatile("movs r3, #1\n\t"
+    asm volatile("movs r7, #1\n\t"
                  "svc  0"
-                 :::"r3");
+                 :::"r7", "cc", "memory");
 }
 
 namespace {
-/*
- * ARM syscall parameter mapping
- * Syscall id is r3, saved at registers[3]
- *
- * Parameter 1 is r0, saved at registers[0]
- * Parameter 2 is r1, saved at registers[1]
- * Parameter 3 is r2, saved at registers[2]
- * Parameter 4 is r12, saved at registers[4]
+/**
+ * \internal
+ * Offset in ctxsave of the register used ad syscall ID. On ARM, we use r7,
+ * whose offset is 4. Note that the syscall ID should NOT be chosen to be a
+ * register that is saved on the stack when the context is saved, as we peek
+ * at that value multiple times, thus coud cause a toctou issue in syscall
+ * validation.
  */
-constexpr unsigned int armSyscallMapping[]={0,1,2,4};
+constexpr unsigned int SYSCALL_ID_OFFSET_IN_CTXSAVE=4;
 }
 
 //
 // class SyscallParameters
 //
 
-inline SyscallParameters::SyscallParameters(unsigned int *context) :
-        registers(reinterpret_cast<unsigned int*>(context[STACK_OFFSET_IN_CTXSAVE])) {}
-
-inline int SyscallParameters::getSyscallId() const
+inline SyscallParameters::SyscallParameters(unsigned int *context)
 {
-    return registers[3];
+    archPtr=context;
+}
+
+inline unsigned int SyscallParameters::getSyscallId() const
+{
+    return archPtr[SYSCALL_ID_OFFSET_IN_CTXSAVE];
 }
 
 inline unsigned int SyscallParameters::getParameter(unsigned int index) const
 {
-    assert(index<4);
-    return registers[armSyscallMapping[index]];
+    assert(index<MAX_NUM_SYSCALL_PARAMETERS);
+    auto *psp=reinterpret_cast<unsigned int*>(archPtr[STACK_OFFSET_IN_CTXSAVE]);
+    return psp[index];
 }
 
 inline void SyscallParameters::setParameter(unsigned int index, unsigned int value)
 {
-    assert(index<4);
-    registers[armSyscallMapping[index]]=value;
+    assert(index<MAX_NUM_SYSCALL_PARAMETERS);
+    auto *psp=reinterpret_cast<unsigned int*>(archPtr[STACK_OFFSET_IN_CTXSAVE]);
+    psp[index]=value;
+}
+
+inline unsigned int peekSyscallId(unsigned int *context)
+{
+    return context[SYSCALL_ID_OFFSET_IN_CTXSAVE];
 }
 
 namespace fault {

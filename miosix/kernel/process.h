@@ -369,9 +369,11 @@ enum class Syscall
     DUP2      = 31,
     PIPE      = 32,
     ACCESS    = 33,
-    //From 34 to 37 reserved for future use
+    //From 34 to 35 reserved for future use
 
     // Time syscalls
+    GETTIME64   = 36,
+    NANOSLEEP64 = 37,
     GETTIME   = 38,
     SETTIME   = 39,
     NANOSLEEP = 40,

@@ -35,6 +35,7 @@
 #include <cstddef>
 #include <utility>
 #include "config/miosix_settings.h"
+#include "interfaces/cpu_const.h"
 
 /**
  * \addtogroup Interfaces
@@ -106,11 +107,11 @@ public:
     /**
      * \return the syscall id, used to identify individual system calls
      */
-    int getSyscallId() const;
+    unsigned int getSyscallId() const;
 
     /**
      * \param index 0=first syscall parameter, 1=second syscall parameter, ...
-     * The maximum number of syscall parameters is architecture dependent
+     * The maximum number of syscall parameters is MAX_NUM_SYSCALL_PARAMETERS
      * \return the syscall parameter. The returned result is meaningful
      * only if the syscall (identified through its id) has the requested parameter
      */
@@ -118,17 +119,40 @@ public:
 
     /**
      * Set the value that will be returned by the syscall.
-     * Invalidates the corresponding parameter so must be called only after the
-     * syscall parameteres have been read.
+     * May invalidate the corresponding parameter so must be called only after
+     * the syscall parameteres have been read.
      * \param index 0=first syscall parameter, 1=second syscall parameter, ...
-     * The maximum number of syscall parameters is architecture dependent
+     * The maximum number of syscall parameters is MAX_NUM_SYSCALL_PARAMETERS
      * \param value value that will be returned by the syscall.
      */
     void setParameter(unsigned int index, unsigned int value);
 
+    /**
+     * Currently Miosix requires room for 4 32bit values for syscall parameters.
+     * These parameters are treated as in/out parameters, as they can also be
+     * modified by the kernel and thus used as return values.
+     * All architectures must provide support for this number of parameters to
+     * make the architecture-independent syscall handling code work
+     */
+    static constexpr int MAX_NUM_SYSCALL_PARAMETERS=4;
+
 private:
-    unsigned int *registers; ///< Architecture-specific pointer
+    unsigned int *archPtr; ///< Architecture-specific pointer
+    unsigned int cachedSyscallParameters[NUM_CACHED_SYSCALL_PARAMETERS];
 };
+
+/**
+ * \internal
+ * This function is used to get only the syscall ID without the need to
+ * instantiate a full SyscallParameters class. TIf you need access also the the
+ * syscall parameters, not just to the syscall ID then SyscallParameters is
+ * needed.
+ * \param context the ctxSave array of the thread. Unlike SyscallParameters,
+ * this function shall work also with the kernelspace context for returning from
+ * syscalls.
+ * \return the syscall id, used to identify individual system calls
+ */
+inline unsigned int peekSyscallId(unsigned int *context);
 
 /**
  * \internal

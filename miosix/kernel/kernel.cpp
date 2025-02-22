@@ -674,22 +674,24 @@ void Thread::IRQhandleSvc()
 
     //Note that it is required to use ctxsave and not runningThread->ctxsave
     //because at this time we do not know if the active context is user or kernel
-    SyscallParameters params(const_cast<unsigned int*>(::ctxsave));
-    unsigned int svcNumber=params.getSyscallId();
-    if(svcNumber==static_cast<unsigned int>(Syscall::YIELD))
+    switch(static_cast<Syscall>(peekSyscallId(const_cast<unsigned int*>(::ctxsave))))
     {
-        Scheduler::IRQrunScheduler();
-        return;
-    }
-    if(svcNumber==static_cast<unsigned int>(Syscall::USERSPACE))
-    {
-        cur->flags.IRQsetUserspace(true);
-        ::ctxsave=cur->userCtxsave;
-        proc->mpu.IRQenable();
-    } else {
-        cur->flags.IRQsetUserspace(false);
-        ::ctxsave=cur->ctxsave;
-        MPUConfiguration::IRQdisable();
+        case Syscall::YIELD:
+            //Yield syscall is handled here in the IRQ by calling the scheduler
+            Scheduler::IRQrunScheduler();
+            return;
+        case Syscall::USERSPACE:
+            //Userspace syscall is handled here in the IRQ by switching to userspace
+            cur->flags.IRQsetUserspace(true);
+            ::ctxsave=cur->userCtxsave;
+            proc->mpu.IRQenable();
+            break;
+        default:
+            //All other syscalls are handled by switching to kernelspace
+            cur->flags.IRQsetUserspace(false);
+            ::ctxsave=cur->ctxsave;
+            MPUConfiguration::IRQdisable();
+            break;
     }
 }
 

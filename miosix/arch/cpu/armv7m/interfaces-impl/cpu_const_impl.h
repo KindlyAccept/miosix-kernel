@@ -83,6 +83,10 @@ const unsigned int CTXSAVE_STACK_ALIGNMENT=8;
 /// \internal Offset in words to retrieve the thread stack pointer in ctxsave
 const unsigned int STACK_OFFSET_IN_CTXSAVE=0;
 
+/// \internal Number of syscall parameters that need to be copied inside class
+/// SyscallParameters
+const unsigned int NUM_CACHED_SYSCALL_PARAMETERS=0;
+
 /**
  * \}
  */

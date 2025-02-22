@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2012-2024 by Terraneo Federico                          *
+ *   Copyright (C) 2012-2025 by Terraneo Federico                          *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -26,82 +26,90 @@
  ***************************************************************************/
 
 .syntax unified
-.arch armv7-m
+/* no .cpu specified, this file supports both thumb-1 and thumb-2 CPUs */
 .thumb
 
 /**
- * call global constructors and destructors
- * uses non-standard calling convention, as it is called only from _start
- * expects the pointer to the start of the function pointer area in r4 and
- * the pointer to the end of it in r5
- */
-.section .text
-.type	call, %function
-call:
-	push {lr}
-	cmp  r4, r5
-	beq  .L100
-.L101:
-	ldr  r3, [r4], #4
-	blx  r3
-	cmp  r5, r4
-	bne  .L101
-.L100:
-	pop  {pc}
-
-/**
  * _start, program entry point
+ * Function is not performance-critical as it is run only once to start the
+ * process so it is written entirely using thumb-1 instructions to be compatible
+ * with all ARM CPUs
  */
 .section .text
 .global _start
 .type _start, %function
 _start:
+	/* Kernel calls here with r0=argc, r1=argv, r2=envp, r3=heapEnd, we save  */
+	/* only argc, argv and envp for later. r3 is written to __processHeapEnd  */
+	/* before we lose it calling constructors. Saving 3*4=12byte + 4bytes in  */
+	/* __call_ctor respects 8 byte stack alignment in the called C++ ctors    */
+	/* while __call_ctor itself uses nonstandard calling conventions anyway   */
+	push  {r0,r1,r2}
 	/* store the stack end (for profiling purposes) */
-	ldr  r4, .L200+20
-	ldr  r4, [r9, r4]
-	str  sp, [r4]
-	/* save argc, argv, envp for later. Saving 3*4=12byte + additional 4bytes */
-	/* in call respects 8 byte stack alignment in the called C++ constructors */
-	/* while call itself uses nonstandard calling conventions anyway */
-	push {r0,r1,r2}
+	mov   r7, r9        /* thumb-1 has limited access to upper registers */
+	mov   r6, sp        /* thumb-1 has limited access to upper registers */
+	ldr.n r0, .L100+0   /* __processStackEnd */
+	ldr   r0, [r7, r0]
+	str   r6, [r0]
 	/* store the heap end in the appropriate variable */
-	ldr  r0, .L200+16
-	ldr  r0, [r9, r0]
-	str  r3, [r0]
+	ldr.n r0, .L100+4   /* __processHeapEnd */
+	ldr   r0, [r7, r0]
+	str   r3, [r0]
 	/* store envp in the appropriate variable */
-	ldr  r0, .L200+24
-	ldr  r0, [r9, r0]
-	str  r2, [r0]
+	ldr.n r0, .L100+8   /* environ */
+	ldr   r0, [r7, r0]
+	str   r2, [r0]
 	/* call C++ global constructors */
-	ldr  r0, .L200
-	ldr  r1, .L200+4
-	ldr  r4, [r9, r0]
-	ldr  r5, [r9, r1]
-	bl   call
-	ldr  r0, .L200+8
-	ldr  r1, .L200+12
-	ldr  r4, [r9, r0]
-	ldr  r5, [r9, r1]
-	bl   call
-	/* get back argc,argv,envp */
-	pop  {r0,r1,r2}
-	/* call main */
-	bl   main
+	ldr.n r0, .L100+12  /* __preinit_array_start */
+	ldr.n r1, .L100+16  /* __preinit_array_end */
+	ldr   r4, [r7, r0]
+	ldr   r5, [r7, r1]
+	bl    __call_ctor
+	ldr.n r0, .L100+20  /* __init_array_start */
+	ldr.n r1, .L100+24  /* __init_array_end */
+	ldr   r4, [r7, r0]
+	ldr   r5, [r7, r1]
+	bl    __call_ctor
+	pop   {r0,r1,r2}    /* get back argc,argv,envp to call main */
+	bl    main
 	/* Terminate the program, simply by calling exit().
      * Note: a previous version of _start manually called __call_exitprocs()
      * followed by _exit(), but it forgot to also call __stdio_exit_handler(),
      * which caused stdout to not be flushed on exit.
-     * The standard exit() function does everything that needs to be done, 
+     * The standard exit() function does everything that needs to be done,
      * and is perfectly fine to call here, so we might as well use it! */
-	b    exit
-.L200:
-	.word	__preinit_array_end(GOT)
+	b     exit
+.align 2
+.L100:
+	.word	__processStackEnd(GOT)
+	.word	__processHeapEnd(GOT)
+	.word	environ(GOT)
 	.word	__preinit_array_start(GOT)
+	.word	__preinit_array_end(GOT)
 	.word	__init_array_start(GOT)
 	.word	__init_array_end(GOT)
-	.word	__processHeapEnd(GOT)
-	.word	__processStackEnd(GOT)
-	.word	environ(GOT)
+
+/**
+ * Call global constructors and destructors
+ * Function is written entirely using thumb-1 instructions to be compatible with
+ * all ARM CPUs
+ * Uses non-standard calling convention, as it is called only from _start
+ * expects the pointer to the start of the function pointer area in r4 and
+ * the pointer to the end of it in r5
+ */
+.section .text
+.type	__call_ctor, %function
+__call_ctor:
+	push {lr}
+	cmp  r4, r5
+	beq  .L101
+.L102:
+	ldmia r4!, {r3}     /* thumb-1 equivalent of ldr  r3, [r4], #4 */
+	blx  r3
+	cmp  r5, r4
+	bne  .L102
+.L101:
+	pop  {pc}
 
 /**
  * pthread_yield
@@ -111,10 +119,11 @@ _start:
 .global pthread_yield
 .type pthread_yield, %function
 pthread_yield:
-	movs r3, #0
+	push {r7,lr}
+	movs r7, #0
 	svc  0
 	movs r0, #0
-	bx   lr
+	pop {r7,pc}
 
 /**
  * open, open a file
@@ -127,11 +136,12 @@ pthread_yield:
 .global open
 .type open, %function
 open:
-	movs r3, #2
+	push {r7,lr}
+	movs r7, #2
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * close, close a file
@@ -142,11 +152,12 @@ open:
 .global close
 .type close, %function
 close:
-	movs r3, #3
+	push {r7,lr}
+	movs r7, #3
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * read, read from file
@@ -159,11 +170,12 @@ close:
 .global	read
 .type	read, %function
 read:
-	movs r3, #4
+	push {r7,lr}
+	movs r7, #4
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * write, write to file
@@ -176,11 +188,12 @@ read:
 .global	write
 .type	write, %function
 write:
-	movs r3, #5
+	push {r7,lr}
+	movs r7, #5
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * lseek
@@ -193,14 +206,13 @@ write:
 .global lseek
 .type lseek, %function
 lseek:
-	ldr  r12, [sp] /* Whence moved to 4th syscall parameter (r12) */
-	movs r1, r3    /* Upper 32bit of pos moved to 2nd syscall parameter (r1) */
-	movs r3, #6
+	push {r7,lr}
+	ldr  r1, [sp, #8]  /* Whence moved to 2nd syscall parameter (r1) */
+	movs r7, #6
 	svc  0
-	cmp  r0, #0
-	sbcs r3, r1, #0 /* 64 bit negative check */
+	cmp  r1, #0        /* 64 bit negative check */
 	blt  syscallfailed64
-	bx   lr
+	pop {r7,pc}
 
 /**
  * stat
@@ -212,11 +224,12 @@ lseek:
 .global stat
 .type stat, %function
 stat:
-	movs r3, #7
+	push {r7,lr}
+	movs r7, #7
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * lstat
@@ -228,11 +241,12 @@ stat:
 .global lstat
 .type lstat, %function
 lstat:
-	movs r3, #8
+	push {r7,lr}
+	movs r7, #8
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * fstat
@@ -244,11 +258,12 @@ lstat:
 .global fstat
 .type fstat, %function
 fstat:
-	movs r3, #9
+	push {r7,lr}
+	movs r7, #9
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * fcntl
@@ -261,11 +276,12 @@ fstat:
 .global fcntl
 .type fcntl, %function
 fcntl:
-	movs r3, #10
+	push {r7,lr}
+	movs r7, #10
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * ioctl
@@ -278,11 +294,12 @@ fcntl:
 .global ioctl
 .type ioctl, %function
 ioctl:
-	movs r3, #11
+	push {r7,lr}
+	movs r7, #11
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * isatty
@@ -294,11 +311,14 @@ ioctl:
 .global isatty
 .type isatty, %function
 isatty:
-	movs r3, #12
+	push {r7,lr}
+	movs r7, #12
 	svc  0
 	cmp  r0, #0
-	ble  __isattyfailed @ tail call
-	bx   lr
+	bgt  .L200
+	bl   __isattyfailed
+.L200:
+	pop {r7,pc}
 
 /**
  * getcwd
@@ -311,14 +331,15 @@ isatty:
 .global getcwd
 .type getcwd, %function
 getcwd:
-	movs r3, #13
+	push {r7,lr}
+	movs r7, #13
 	svc  0
 	cmp  r1, #0
-	blt  .L300
-	bx   lr
-.L300:
+	bge  .L300
 	movs r0, r1
-	b    __getcwdfailed @ tail call
+	bl   __getcwdfailed
+.L300:
+	pop {r7,pc}
 
 /**
  * chdir
@@ -329,11 +350,12 @@ getcwd:
 .global chdir
 .type chdir, %function
 chdir:
-	movs r3, #14
+	push {r7,lr}
+	movs r7, #14
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * getdents
@@ -346,11 +368,12 @@ chdir:
 .global getdents
 .type getdents, %function
 getdents:
-	movs r3, #15
+	push {r7,lr}
+	movs r7, #15
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * mkdir
@@ -362,11 +385,12 @@ getdents:
 .global mkdir
 .type mkdir, %function
 mkdir:
-	movs r3, #16
+	push {r7,lr}
+	movs r7, #16
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * rmdir
@@ -377,11 +401,12 @@ mkdir:
 .global rmdir
 .type rmdir, %function
 rmdir:
-	movs r3, #17
+	push {r7,lr}
+	movs r7, #17
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * link
@@ -393,11 +418,12 @@ rmdir:
 .global link
 .type link, %function
 link:
-	movs r3, #18
+	push {r7,lr}
+	movs r7, #18
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * unlink
@@ -408,11 +434,12 @@ link:
 .global unlink
 .type unlink, %function
 unlink:
-	movs r3, #19
+	push {r7,lr}
+	movs r7, #19
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * symlink
@@ -424,11 +451,12 @@ unlink:
 .global symlink
 .type symlink, %function
 symlink:
-	movs r3, #20
+	push {r7,lr}
+	movs r7, #20
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * readlink
@@ -441,11 +469,12 @@ symlink:
 .global readlink
 .type readlink, %function
 readlink:
-	movs r3, #21
+	push {r7,lr}
+	movs r7, #21
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * truncate
@@ -457,12 +486,12 @@ readlink:
 .global truncate
 .type truncate, %function
 truncate:
-	movs r1, r3
-	movs r3, #22
+	push {r7,lr}
+	movs r7, #22
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * ftruncate
@@ -474,12 +503,12 @@ truncate:
 .global ftruncate
 .type ftruncate, %function
 ftruncate:
-	movs r1, r3
-	movs r3, #23
+	push {r7,lr}
+	movs r7, #23
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * rename
@@ -491,11 +520,12 @@ ftruncate:
 .global rename
 .type rename, %function
 rename:
-	movs r3, #24
+	push {r7,lr}
+	movs r7, #24
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /* TODO: missing syscalls: chmod, fchmod, chown, fchown, lchown */
 
@@ -508,11 +538,12 @@ rename:
 .global dup
 .type dup, %function
 dup:
-	movs r3, #30
+	push {r7,lr}
+	movs r7, #30
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * dup2
@@ -524,11 +555,12 @@ dup:
 .global dup2
 .type dup2, %function
 dup2:
-	movs r3, #31
+	push {r7,lr}
+	movs r7, #31
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * pipe
@@ -539,17 +571,15 @@ dup2:
 .global pipe
 .type pipe, %function
 pipe:
-	movs r3, #32
+	push {r7,lr}
+	movs r3, r0        /* save fds to a non overwritten register */
+	movs r7, #32
 	svc  0
-	cmp  r1, #0
-	blt  .L400
-	str  r2, [r0]
-	str  r12, [r0, #4]
-	movs r0, r1
-	bx   lr
-.L400:
-	movs r0, r1
-	b    syscallfailed32
+	cmp  r0, #0
+	blt  syscallfailed32
+	str  r1, [r3]
+	str  r2, [r3, #4]
+	pop {r7,pc}
 
 /* TODO: missing syscalls: access */
 
@@ -561,10 +591,23 @@ pipe:
 .global _ZN6miosix7getTimeEv
 .type _ZN6miosix7getTimeEv, %function
 _ZN6miosix7getTimeEv:
-	movs r0, #4
-	movs r3, #38
+	push {r7,lr}
+	movs r7, #36
 	svc  0
-	bx   lr
+	pop {r7,pc}
+
+/**
+ * miosix::nanoSleepUntil, nonstandard syscall
+ * \param absolute sleep time in nanoseconds, relative to clock monotonic
+ */
+.section .text._ZN6miosix14nanoSleepUntilEx
+.global _ZN6miosix14nanoSleepUntilEx
+.type _ZN6miosix14nanoSleepUntilEx, %function
+_ZN6miosix14nanoSleepUntilEx:
+	push {r7,lr}
+	movs r7, #37
+	svc  0
+	pop {r7,pc}
 
 /**
  * clock_gettime
@@ -577,21 +620,19 @@ _ZN6miosix7getTimeEv:
 .global clock_gettime
 .type clock_gettime, %function
 clock_gettime:
-	push {r4, lr}
+	push {r4, r7}
 	movs r4, r1
-	movs r3, #38
+	movs r7, #38
 	svc  0
-	adr  r3, .L500
-	ldrd r2, [r3]
-	bl   __aeabi_ldivmod
-	strd r0, [r4]
-	str  r2, [r4, #8]
-	movs r0, #0
-	pop  {r4, pc}
-	.align 2
-.L500:
-	.word 1000000000
-	.word 0
+#ifdef __ARM_ARCH_6M__
+	str  r2, [r4]
+	str  r3, [r4, #4]
+#else
+	strd r2, [r4]
+#endif
+	str  r1, [r4, #8]
+	pop  {r4, r7}
+	bx   lr
 
 /**
  * clock_settime
@@ -603,63 +644,47 @@ clock_gettime:
 .global clock_settime
 .type clock_settime, %function
 clock_settime:
-	push {r4}
-	ldr  r4, .L600
+	push {r7, lr}
+	/* return syscall(clock_id,tp->tv_nsec,tp->tv_sec); */
+#ifdef __ARM_ARCH_6M__
+	ldr  r2, [r1]
+	ldr  r3, [r1, #4]
+#else
 	ldrd r2, [r1]
-	umull r2, r12, r2, r4
+#endif
 	ldr  r1, [r1, #8]
-	mla  r3, r3, r4, r12
-	adds r2, r2, r1
-	adc  r1, r3, r1, asr #31
-	movs r3, #39
+	movs r7, #39
 	svc  0
-	pop  {r4}
-	bx   lr
-	.align 2
-.L600:
-	.word 1000000000
-
-/**
- * miosix::nanoSleepUntil, nonstandard syscall
- * \param absolute sleep time in nanoseconds, relative to clock monotonic
- */
-.section .text._ZN6miosix14nanoSleepUntilEx
-.global _ZN6miosix14nanoSleepUntilEx
-.type _ZN6miosix14nanoSleepUntilEx, %function
-_ZN6miosix14nanoSleepUntilEx:
-	mov  r12, #260
-	movs r3, #40
-	svc  0
-	bx   lr
+	pop  {r7, pc}
 
 /**
  * clock_nanosleep
  * \param clockid which clock
  * \param flags absolute or relative
  * \param req struct timespec* with sleep time
- * \param rem ignored
+ * \param rem currently ignored but passed to kernel as 5th syscall parameter
  * \return 0 on success or a positive error code
  */
 .section .text.clock_nanosleep
 .global clock_nanosleep
 .type clock_nanosleep, %function
 clock_nanosleep:
-	push {r4}
-	orr  r12, r0, r1, lsl #6    @ Pack clockid and flags
-	ldr  r4, .L700
-	ldrd r0, [r2]               @ Read tv_sec field of req in r0, r1
-	umull r0, r3, r0, r4        @ Compute low half of tv_sec * 1000000000 in r0
-	ldr  r2, [r2, #8]           @ Load tv_nsec field
-	mla  r1, r1, r4, r3         @ Compute high half of tv_sec * 1000000000 in r1
-	adds r0, r0, r2
-	adc  r1, r1, r2, asr #31    @ Add tv_nsec
-	movs r3, #40
-	svc  0                      @ Invoke syscall 40 (GETTIME)
-	pop  {r4}
-	bx   lr                     @ Epilogue
-	.align 2
-.L700:
-	.word 1000000000
+	push {r4, r7}
+	/* return syscall(clockid | flags<<6,req->tv_nsec,req->tv_sec,rem); */
+#ifdef __ARM_ARCH_6M__
+	lsls r1, r1, #6
+	orrs r0, r1
+#else
+	orr  r0, r0, r1, lsl #6
+#endif
+	ldr  r1, [r2, #8]
+	movs r4, r3              /* Move rem to r4 for future use by kernel */
+	ldr  r3, [r2, #4]        /* avoid ldrd due to hw errata in some cortex-m3 */
+	ldr  r2, [r2]
+	movs r7, #40
+	svc  0
+	pop  {r4, r7}
+	bx   lr
 
 /**
  * clock_getres
@@ -671,13 +696,14 @@ clock_nanosleep:
 .global clock_getres
 .type clock_getres, %function
 clock_getres:
-	movs r3, #41
+	push {r7,lr}
+	movs r7, #41
 	svc  0
 	str  r2, [r1, #8]
-	movs r2, #0
 	movs r3, #0
-	strd r2, [r1]
-	bx   lr
+	str  r3, [r1, #4]
+	str  r3, [r1, #0]
+	pop {r7,pc}
 
 /* TODO: missing syscalls: clock_adjtime */
 
@@ -690,7 +716,7 @@ clock_getres:
 .global _exit
 .type _exit, %function
 _exit:
-	movs r3, #43
+	movs r7, #43
 	svc  0
 
 /**
@@ -704,10 +730,10 @@ _exit:
 .global _execve
 .type _execve, %function
 _execve:
-	movs r3, #44
+	push {r7,lr}
+	movs r7, #44
 	svc  0
-	/* if execve returns, then it failed */
-	b    __seterrno32
+	b syscallfailed32 /* if execve returns, then it failed */
 
 /**
  * posix_spawn, start a new process running the given program
@@ -723,16 +749,25 @@ _execve:
 .global posix_spawn
 .type posix_spawn, %function
 posix_spawn:
-	cbnz r2, .L800
-	cbnz r3, .L800      @ Fail on file_actions/attrp != 0
-	ldrd r2, r3, [sp]
-	mov  r12, r3        @ Move argv, envp pointers to r2, 12 respectively
-	movs r3, #45
-	svc  0              @ Invoke syscall 45 (SPAWN)
-	bx   lr
+	push {r7,lr}
+#ifdef __ARM_ARCH_6M__
+	cmp  r2, #0           /* Fail on file_actions/attrp != 0 */
+	bne  .L800
+	cmp  r3, #0
+	bne  .L800
+	ldr  r3, [sp, #12]    /* Move argv, envp pointers to r2, r3 respectively */
+	ldr  r2, [sp, #8]
+#else
+	cbnz r2, .L800        /* Fail on file_actions/attrp != 0 */
+	cbnz r3, .L800
+	ldrd r2, r3, [sp, #8] /* Move argv, envp pointers to r2, r3 respectively */
+#endif
+	movs r7, #45
+	svc  0                /* Invoke syscall 45 (SPAWN) */
+	pop {r7,pc}
 .L800:
-	movs r0, #14        @ EFAULT
-	bx   lr
+	movs r0, #14          /* EFAULT */
+	pop {r7,pc}
 
 /* TODO: missing syscalls */
 
@@ -747,11 +782,12 @@ posix_spawn:
 .global waitpid
 .type waitpid, %function
 waitpid:
-	movs r3, #47
+	push {r7,lr}
+	movs r7, #47
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /**
  * getpid
@@ -761,9 +797,10 @@ waitpid:
 .global getpid
 .type getpid, %function
 getpid:
-	movs r3, #48
+	push {r7,lr}
+	movs r7, #48
 	svc  0
-	bx   lr
+	pop {r7,pc}
 
 /**
  * getppid
@@ -773,9 +810,10 @@ getpid:
 .global getppid
 .type getppid, %function
 getppid:
-	movs r3, #49
+	push {r7,lr}
+	movs r7, #49
 	svc  0
-	bx   lr
+	pop {r7,pc}
 
 /* TODO: missing syscalls: getuid, getgid, geteuid, getegid, setuid, setgid */
 
@@ -788,22 +826,37 @@ getppid:
 .global sysconf
 .type sysconf, %function
 sysconf:
-	movs r3, #59
+	push {r7,lr}
+	movs r7, #59
 	svc  0
 	cmp  r0, #0
 	blt  syscallfailed32
-	bx   lr
+	pop {r7,pc}
 
 /* common jump target for all failing syscalls with 32 bit return value */
 .section .text.__seterrno32
 syscallfailed32:
-	/* tail call */
-	b    __seterrno32
+#ifdef __ARM_ARCH_6M__
+	ldr  r7, [sp, #4] /* push{r7,lr} leaves lr @ sp+4 and r7 @ sp+0 */
+	mov  lr, r7
+	ldr  r7, [sp, #0]
+	add  sp, #8
+#else
+	pop {r7,lr}
+#endif
+	b    __seterrno32 @ tail call
 
 /* common jump target for all failing syscalls with 64 bit return value */
 .section .text.__seterrno64
 syscallfailed64:
-	/* tail call */
-	b    __seterrno64
+#ifdef __ARM_ARCH_6M__
+	ldr  r7, [sp, #4] /* push{r7,lr} leaves lr @ sp+4 and r7 @ sp+0 */
+	mov  lr, r7
+	ldr  r7, [sp, #0]
+	add  sp, #8
+#else
+	pop {r7,lr}
+#endif
+	b    __seterrno64 @ tail call
 
 .end

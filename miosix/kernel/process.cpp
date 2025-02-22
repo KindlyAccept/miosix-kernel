@@ -404,9 +404,9 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
             case Syscall::LSEEK:
             {
                 off_t pos=sp.getParameter(2);
-                pos|=static_cast<off_t>(sp.getParameter(1))<<32;
+                pos|=static_cast<off_t>(sp.getParameter(3))<<32;
                 off_t result=fileTable.lseek(sp.getParameter(0),pos,
-                    sp.getParameter(3));
+                    sp.getParameter(1));
                 sp.setParameter(0,result & 0xffffffff);
                 sp.setParameter(1,result>>32);
                 break;
@@ -596,7 +596,7 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
             {
                 auto path=reinterpret_cast<const char*>(sp.getParameter(0));
                 off_t size=sp.getParameter(2);
-                size|=static_cast<off_t>(sp.getParameter(1))<<32;
+                size|=static_cast<off_t>(sp.getParameter(3))<<32;
                 if(mpu.withinForReading(path))
                 {
                     int result=fileTable.truncate(path,size);
@@ -608,7 +608,7 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
             case Syscall::FTRUNCATE:
             {
                 off_t size=sp.getParameter(2);
-                size|=static_cast<off_t>(sp.getParameter(1))<<32;
+                size|=static_cast<off_t>(sp.getParameter(3))<<32;
                 int result=fileTable.ftruncate(sp.getParameter(0),size);
                 sp.setParameter(0,result);
                 break;
@@ -676,9 +676,9 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
             {
                 int fds[2];
                 int result=fileTable.pipe(fds);
-                sp.setParameter(1,result); //Does not overwrite r0 on purpose
-                sp.setParameter(2,fds[0]);
-                sp.setParameter(3,fds[1]);
+                sp.setParameter(0,result);
+                sp.setParameter(1,fds[0]);
+                sp.setParameter(2,fds[1]);
                 break;
             }
 
@@ -688,39 +688,63 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
                 break;
             }
 
-            case Syscall::GETTIME:
+            case Syscall::GETTIME64:
             {
-                //TODO: sp.getParameter(0) is clockid_t by there's no support yet
                 long long t=getTime();
                 sp.setParameter(0,t & 0xffffffff);
                 sp.setParameter(1,t>>32);
                 break;
             }
 
+            case Syscall::NANOSLEEP64:
+            {
+                long long t=sp.getParameter(0);
+                t|=static_cast<long long>(sp.getParameter(1))<<32;
+                Thread::nanoSleepUntil(t);
+                break;
+            }
+
+            case Syscall::GETTIME:
+            {
+                struct timespec tp;
+                int result=clock_gettime(sp.getParameter(0),&tp);
+                sp.setParameter(0,result);
+                if(result==0)
+                {
+                    sp.setParameter(1,tp.tv_nsec);
+                    sp.setParameter(2,tp.tv_sec & 0xffffffff);
+                    sp.setParameter(3,tp.tv_sec>>32);
+                }
+                break;
+            }
+
             case Syscall::SETTIME:
             {
-//                 int clockid=sp.getParameter(0);
-//                 long long t=sp.getParameter(2);
-//                 t|=static_cast<long long>(sp.getParameter(1))<<32;
+                // struct timespec tp;
+                // int clockid=sp.getParameter(0);
+                // tp.tv_nsec=sp.getParameter(1);
+                // tp.tv_sec=sp.getParameter(2);
+                // tp.tv_sec|=static_cast<long long>(sp.getParameter(3))<<32;
                 sp.setParameter(0,EFAULT); //NOTE: positive error codes
                 break;
             }
 
             case Syscall::NANOSLEEP:
             {
-                int clockidAndFlags=sp.getParameter(3);
-                long long t=sp.getParameter(0);
-                t|=static_cast<long long>(sp.getParameter(1))<<32;
-                //TODO support for clockid is not implemented yet
-                if((clockidAndFlags & (1<<8))==0) t+=getTime(); //Relative sleep?
-                Thread::nanoSleepUntil(t);
-                sp.setParameter(0,0);
+                struct timespec tp;
+                int cf=sp.getParameter(0); //clockid and flags packed in one
+                tp.tv_nsec=sp.getParameter(1);
+                tp.tv_sec=sp.getParameter(2);
+                tp.tv_sec|=static_cast<long long>(sp.getParameter(3))<<32;
+                int result=clock_nanosleep(cf & 0x3f,cf>>6,&tp,nullptr);
+                sp.setParameter(0,result);
                 break;
             }
 
             case Syscall::GETRES:
             {
                 struct timespec tv;
+                tv.tv_nsec=0; //Initialize value in case clock_getres fails
                 sp.setParameter(0,clock_getres(sp.getParameter(0),&tv));
                 //tv_sec not returned, clock resolutions >=1 second unsupported
                 sp.setParameter(2,tv.tv_nsec);
