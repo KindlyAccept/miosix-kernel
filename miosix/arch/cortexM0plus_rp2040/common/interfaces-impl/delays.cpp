@@ -45,7 +45,7 @@ static inline __attribute__((always_inline)) void delayUsImpl(unsigned int us)
             "1:  nop        \n"
             "    nop        \n"
             "    nop        \n"
-            "    subs %0, #1\n"
+            "    sub  %0, #1\n"
             "    cmp  %0, #0\n"
             "    bne  1b    \n":"+r"(iter_count)::"cc");
     } else if(cpuFrequency==125000000) {
@@ -54,7 +54,7 @@ static inline __attribute__((always_inline)) void delayUsImpl(unsigned int us)
         asm volatile(
             ".align 2       \n"
             "1:  nop        \n"
-            "    subs %0, #1\n"
+            "    sub  %0, #1\n"
             "    cmp  %0, #0\n"
             "    bne  1b    \n":"+r"(iter_count)::"cc");
     }
