@@ -632,7 +632,11 @@ clock_gettime:
 #endif
 	str  r1, [r4, #8]
 	pop  {r4, r7}
+	cmp  r0, #0
+	blt  .L400        /* can't use syscallfailed32 as we haven't pushed r7,lr */
 	bx   lr
+.L400:
+	b    __seterrno32 @ tail call
 
 /**
  * clock_settime
@@ -655,6 +659,8 @@ clock_settime:
 	ldr  r1, [r1, #8]
 	movs r7, #39
 	svc  0
+	cmp  r0, #0
+	blt  syscallfailed32
 	pop  {r7, pc}
 
 /**
@@ -697,12 +703,18 @@ clock_nanosleep:
 .type clock_getres, %function
 clock_getres:
 	push {r7,lr}
+	movs r2, r1       /* save req to a non overwritten register */
 	movs r7, #41
 	svc  0
-	str  r2, [r1, #8]
+	cmp  r2, #0
+	beq  .L500        /* req can be nullptr */
+	str  r1, [r2, #8]
 	movs r3, #0
-	str  r3, [r1, #4]
-	str  r3, [r1, #0]
+	str  r3, [r2, #4]
+	str  r3, [r2, #0]
+.L500:
+	cmp  r0, #0
+	blt  syscallfailed32
 	pop {r7,pc}
 
 /* TODO: missing syscalls: clock_adjtime */

@@ -1112,21 +1112,21 @@ int pipe(int fds[2])
 int clock_gettime(clockid_t clock_id, struct timespec *tp)
 {
     if(tp==nullptr) return -1;
-    //TODO: support CLOCK_REALTIME
+    //TODO: support CLOCK_REALTIME and set errno on failure
     miosix::ll2timespec(miosix::getTime(),tp);
     return 0;
 }
 
 int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
-    //TODO: support CLOCK_REALTIME
+    //TODO: support CLOCK_REALTIME and set errno on failure
     return -1;
 }
 
 int clock_getres(clockid_t clock_id, struct timespec *res)
 {
     if(res==nullptr) return -1;
-    //TODO: support CLOCK_REALTIME
+    //TODO: support CLOCK_REALTIME and set errno on failure
 
     //Integer division with round-to-nearest for better accuracy
     int resolution=2*miosix::nsPerSec/miosix::osTimerGetFrequency();
@@ -1140,7 +1140,10 @@ int clock_getres(clockid_t clock_id, struct timespec *res)
 int clock_nanosleep(clockid_t clock_id, int flags,
                     const struct timespec *req, struct timespec *rem)
 {
-    if(req==nullptr) return -1;
+    //NOTE: unlike clock_gettime, clock_settime and clock_getres which return -1
+    //and set errno on failure, this function does not set errno and returns the
+    //error, go figure
+    if(req==nullptr) return EFAULT;
     //TODO: support CLOCK_REALTIME
     long long timeNs=miosix::timespec2ll(req);
     if(flags!=TIMER_ABSTIME) timeNs+=miosix::getTime();

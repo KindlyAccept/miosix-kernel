@@ -454,7 +454,7 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
                 //NOTE: some fcntl operations have an optional third parameter
                 //which can be either missing, an int or a pointer.
                 //Currenlty we do not support any with a pointer third arg, but
-                //we arr on the side of safety and either pass the int or pass
+                //we err on the side of safety and either pass the int or pass
                 //zero. When we'll support those with the pointer, we'll
                 //validate it here.
                 int result,cmd=sp.getParameter(1);
@@ -708,12 +708,17 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
             {
                 struct timespec tp;
                 int result=clock_gettime(sp.getParameter(0),&tp);
-                sp.setParameter(0,result);
                 if(result==0)
                 {
+                    sp.setParameter(0,0);
                     sp.setParameter(1,tp.tv_nsec);
                     sp.setParameter(2,tp.tv_sec & 0xffffffff);
                     sp.setParameter(3,tp.tv_sec>>32);
+                } else {
+                    sp.setParameter(0,-errno);
+                    sp.setParameter(1,0);
+                    sp.setParameter(2,0);
+                    sp.setParameter(3,0);
                 }
                 break;
             }
@@ -725,7 +730,7 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
                 // tp.tv_nsec=sp.getParameter(1);
                 // tp.tv_sec=sp.getParameter(2);
                 // tp.tv_sec|=static_cast<long long>(sp.getParameter(3))<<32;
-                sp.setParameter(0,EFAULT); //NOTE: positive error codes
+                sp.setParameter(0,-EFAULT); //TODO: stub
                 break;
             }
 
@@ -737,6 +742,9 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
                 tp.tv_sec=sp.getParameter(2);
                 tp.tv_sec|=static_cast<long long>(sp.getParameter(3))<<32;
                 int result=clock_nanosleep(cf & 0x3f,cf>>6,&tp,nullptr);
+                //TODO: if nanosleep fails, get rem as sp.getParameter(3),
+                //validate it and copy rem from clock_nanosleep into it
+                //additinally consider that rem is also allowed to be nullptr
                 sp.setParameter(0,result);
                 break;
             }
@@ -744,10 +752,16 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
             case Syscall::GETRES:
             {
                 struct timespec tv;
-                tv.tv_nsec=0; //Initialize value in case clock_getres fails
-                sp.setParameter(0,clock_getres(sp.getParameter(0),&tv));
-                //tv_sec not returned, clock resolutions >=1 second unsupported
-                sp.setParameter(2,tv.tv_nsec);
+                int result=clock_getres(sp.getParameter(0),&tv);
+                if(result==0)
+                {
+                    sp.setParameter(0,0);
+                    //tv_sec not returned, clock resolutions >=1 second unsupported
+                    sp.setParameter(1,tv.tv_nsec);
+                } else {
+                    sp.setParameter(0,-errno);
+                    sp.setParameter(1,0);
+                }
                 break;
             }
 
