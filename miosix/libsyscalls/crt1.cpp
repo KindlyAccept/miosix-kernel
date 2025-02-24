@@ -451,7 +451,7 @@ int posix_spawn(pid_t *pid, const char *path,
     args.envp=envp;
     int result=__do_spawn(&args);
     if(result<0) return -result;
-    *pid=result;
+    if(pid) *pid=result;
     return 0;
 }
 
