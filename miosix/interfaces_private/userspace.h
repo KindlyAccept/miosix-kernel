@@ -138,7 +138,6 @@ public:
 
 private:
     unsigned int *archPtr; ///< Architecture-specific pointer
-    unsigned int cachedSyscallParameters[NUM_CACHED_SYSCALL_PARAMETERS];
 };
 
 /**
