@@ -668,29 +668,17 @@ clock_settime:
  * \param clockid which clock
  * \param flags absolute or relative
  * \param req struct timespec* with sleep time
- * \param rem currently ignored but passed to kernel as 5th syscall parameter
+ * \param rem optional struct timespec*
  * \return 0 on success or a positive error code
  */
 .section .text.clock_nanosleep
 .global clock_nanosleep
 .type clock_nanosleep, %function
 clock_nanosleep:
-	push {r4, r7}
-	/* return syscall(clockid | flags<<6,req->tv_nsec,req->tv_sec,rem); */
-#ifdef __ARM_ARCH_6M__
-	lsls r1, r1, #6
-	orrs r0, r1
-#else
-	orr  r0, r0, r1, lsl #6
-#endif
-	ldr  r1, [r2, #8]
-	movs r4, r3              /* Move rem to r4 for future use by kernel */
-	ldr  r3, [r2, #4]        /* avoid ldrd due to hw errata in some cortex-m3 */
-	ldr  r2, [r2]
+	push {r7, lr}
 	movs r7, #40
 	svc  0
-	pop  {r4, r7}
-	bx   lr
+	pop {r7,pc}
 
 /**
  * clock_getres
@@ -748,37 +736,23 @@ _execve:
 	b syscallfailed32 /* if execve returns, then it failed */
 
 /**
- * posix_spawn, start a new process running the given program
- * \param pid pid of running program will be stored here
- * \param path program to run
- * \param file_actions optional actions (not supported, must be nullptr)
- * \param attrp more options            (not supported, must be nullptr)
- * \param argv program arguments
- * \param envp program environment variables
- * \return an error code on failure, 0 on success
+ * __do_spawn, syscall underneath posix_spawn, start a new process running the
+ * given program
+ * \param ptr pointer to a struct SpawnArgs with the following fields
+ * - path program to run
+ * - file_actions optional actions
+ * - attrp more options
+ * - argv program arguments
+ * - envp program environment variables
+ * \return the pid of the spawned process or a negative error code on failure
  */
-.section .text.posix_spawn
-.global posix_spawn
-.type posix_spawn, %function
-posix_spawn:
+.section .text.__do_spawn
+.global __do_spawn
+.type __do_spawn, %function
+__do_spawn:
 	push {r7,lr}
-#ifdef __ARM_ARCH_6M__
-	cmp  r2, #0           /* Fail on file_actions/attrp != 0 */
-	bne  .L800
-	cmp  r3, #0
-	bne  .L800
-	ldr  r3, [sp, #12]    /* Move argv, envp pointers to r2, r3 respectively */
-	ldr  r2, [sp, #8]
-#else
-	cbnz r2, .L800        /* Fail on file_actions/attrp != 0 */
-	cbnz r3, .L800
-	ldrd r2, r3, [sp, #8] /* Move argv, envp pointers to r2, r3 respectively */
-#endif
 	movs r7, #45
-	svc  0                /* Invoke syscall 45 (SPAWN) */
-	pop {r7,pc}
-.L800:
-	movs r0, #14          /* EFAULT */
+	svc  0
 	pop {r7,pc}
 
 /* TODO: missing syscalls */

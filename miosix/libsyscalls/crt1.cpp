@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <spawn.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/stat.h>
@@ -425,6 +426,33 @@ int gettimeofday(struct timeval *tv, void *tz)
 int nanosleep(const struct timespec *req, struct timespec *rem)
 {
     return clock_nanosleep(CLOCK_MONOTONIC,0,req,rem);
+}
+
+struct SpawnArgs
+{
+    const char *path;
+    const posix_spawn_file_actions_t *actions;
+    const posix_spawnattr_t *attr;
+    char *const *argv;
+    char *const *envp;
+};
+
+int __do_spawn(SpawnArgs *args);
+
+int posix_spawn(pid_t *pid, const char *path,
+    const posix_spawn_file_actions_t *actions, const posix_spawnattr_t *attr,
+    char *const argv[], char *const envp[])
+{
+    SpawnArgs args;
+    args.path=path;
+    args.actions=actions;
+    args.attr=attr;
+    args.argv=argv;
+    args.envp=envp;
+    int result=__do_spawn(&args);
+    if(result<0) return -result;
+    *pid=result;
+    return 0;
 }
 
 pid_t wait(int *status)

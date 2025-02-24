@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <limits.h>
+#include <spawn.h>
 
 #include "sync.h"
 #include "process_pool.h"
@@ -86,6 +87,18 @@ static int validateStringArray(MPUConfiguration& mpu, char* const* a)
         if(mpu.withinForReading(a[i])==false) return -1;
     }
 }
+
+/**
+ * Struct used by posix_spawn to pass all syscall arguments
+ */
+struct SpawnArgs
+{
+    const char *path;
+    const posix_spawn_file_actions_t *actions;
+    const posix_spawnattr_t *attr;
+    char *const *argv;
+    char *const *envp;
+};
 
 /**
  * This class contains information on all the processes in the system
@@ -736,16 +749,15 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
 
             case Syscall::NANOSLEEP:
             {
-                struct timespec tp;
-                int cf=sp.getParameter(0); //clockid and flags packed in one
-                tp.tv_nsec=sp.getParameter(1);
-                tp.tv_sec=sp.getParameter(2);
-                tp.tv_sec|=static_cast<long long>(sp.getParameter(3))<<32;
-                int result=clock_nanosleep(cf & 0x3f,cf>>6,&tp,nullptr);
-                //TODO: if nanosleep fails, get rem as sp.getParameter(3),
-                //validate it and copy rem from clock_nanosleep into it
-                //additinally consider that rem is also allowed to be nullptr
-                sp.setParameter(0,result);
+                auto *req=reinterpret_cast<struct timespec*>(sp.getParameter(2));
+                auto *rem=reinterpret_cast<struct timespec*>(sp.getParameter(3));
+                if(mpu.withinForReading(req,sizeof(struct timespec)) && (
+                   rem==nullptr || mpu.withinForWriting(rem,sizeof(struct timespec))))
+                {
+                    int result=clock_nanosleep(sp.getParameter(0),sp.getParameter(1),
+                        req,rem);
+                    sp.setParameter(0,result);
+                } else sp.setParameter(0,EFAULT); //NOTE: positive error code
                 break;
             }
 
@@ -816,22 +828,24 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
 
             case Syscall::SPAWN:
             {
-                auto pidp=reinterpret_cast<pid_t*>(sp.getParameter(0));
-                auto path=reinterpret_cast<const char*>(sp.getParameter(1));
-                auto argv=reinterpret_cast<char* const*>(sp.getParameter(2));
-                auto envp=reinterpret_cast<char* const*>(sp.getParameter(3));
-                int narg=validateStringArray(mpu,argv);
-                int nenv=validateStringArray(mpu,envp);
-                if((!pidp || mpu.withinForWriting(pidp,sizeof(pid_t))) &&
-                   mpu.withinForReading(path) && narg>=0 && nenv>=0)
+                auto *ptr=reinterpret_cast<SpawnArgs*>(sp.getParameter(0));
+                if(!mpu.withinForReading(ptr,sizeof(SpawnArgs)))
                 {
-                    auto pid=Process::spawn(path,argv,envp,narg,nenv);
-                    if(pid>=0)
-                    {
-                        if(pidp) *pidp=pid;
-                        sp.setParameter(0,0);
-                    } else sp.setParameter(0,-pid); //NOTE: positive error codes
-                } else sp.setParameter(0,EFAULT); //NOTE: positive error codes
+                    sp.setParameter(0,-EFAULT);
+                    break;
+                }
+                SpawnArgs args;
+                memcpy(&args,ptr,sizeof(SpawnArgs));
+                int narg=validateStringArray(mpu,args.argv);
+                int nenv=validateStringArray(mpu,args.envp);
+                //TODO: validate and handle args.actions and args.attr
+                if(!mpu.withinForReading(args.path) || narg<0 || nenv<0)
+                {
+                    sp.setParameter(0,-EFAULT);
+                    break;
+                }
+                auto pid=Process::spawn(args.path,args.argv,args.envp,narg,nenv);
+                sp.setParameter(0,pid);
                 break;
             }
 
