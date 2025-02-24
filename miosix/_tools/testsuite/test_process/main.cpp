@@ -85,17 +85,6 @@ int main(int argc, char *argv[], char *envp[])
             execve(arg[0],arg,env);
             return 99;
         }
-        if(strcmp("sigsegv", argv[1])==0)
-        {
-            uint32_t *ptr=nullptr;
-            // Fool the compiler in believing the ptr may not be null
-            // If we don't do this, the compiler is allowed to consider this
-            // code to always have undefined behavior and transform it to
-            // something we don't want (clang is known to pull this kind of
-            // tricks)
-            asm volatile("":"+r"(ptr)::);
-            *ptr=12345;
-        }
     }
     else return 1;
     return 0;

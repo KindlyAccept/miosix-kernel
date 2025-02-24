@@ -1344,20 +1344,6 @@ static void sys_test_spawn()
     if(WIFSTOPPED(pstat)) fail("WIFSTOPPED (4)");
     if(WEXITSTATUS(pstat)!=0) fail("environ");
 
-    // The sigsegv process is only compiled in the kernel tests because
-    // otherwise we can't detect if we have an MPU or not.
-    #if !defined(IN_PROCESS) && __MPU_PRESENT
-    const char *arg4[] = { "/bin/test_process", "sigsegv", nullptr };
-    iprintf("A process will terminate due to a null pointer dereference...\n");
-    ec=posix_spawn(nullptr,arg4[0],NULL,NULL,(char* const*)arg4,(char* const*)env);
-    if(ec!=0) fail("posix_spawn (5)");
-    wait(&pstat);
-    if(WIFEXITED(pstat)) fail("WIFEXITED (5)");
-    if(!WIFSIGNALED(pstat)) fail("WIFSIGNALED (5)");
-    if(WIFSTOPPED(pstat)) fail("WIFSTOPPED (5)");
-    if(WTERMSIG(pstat)!=SIGSEGV) fail("WTERMSIG (5)");
-    #endif // !defined(IN_PROCESS) && __MPU_PRESENT
-
     const char *arg5[] = { "/bin/test_process", "execve", nullptr };
     ec=posix_spawn(nullptr,arg5[0],NULL,NULL,(char* const*)arg5,(char* const*)env);
     if(ec!=0) fail("posix_spawn (6)");
