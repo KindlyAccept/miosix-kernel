@@ -127,6 +127,7 @@ void testCacheAndDMA();
 #endif //_ARCH_CORTEXM7_STM32F7/H7
 #ifdef WITH_PROCESSES
 void test_syscalls_process();
+void test_crash_process();
 #endif //WITH_PROCESSES
 //Benchmark functions
 static void benchmark_1();
@@ -151,6 +152,7 @@ int main()
                 " 't' for kernel test\n"
                 " 'k' for kercall test (includes filesystem)\n"
                 " 'p' for syscall/processes test\n"
+                " 'c' for processes crash test\n"
                 " 'x' for exception test\n"
                 " 'b' for benchmarks\n"
                 " 's' for shutdown\n");
@@ -208,6 +210,13 @@ int main()
             case 'p':
                 #ifdef WITH_PROCESSES
                 test_syscalls_process();
+                #else // WITH_PROCESSES
+                iprintf("Error, process support is disabled\n");
+                #endif // WITH_PROCESSES
+                break;
+            case 'c':
+                #ifdef WITH_PROCESSES
+                test_crash_process();
                 #else // WITH_PROCESSES
                 iprintf("Error, process support is disabled\n");
                 #endif // WITH_PROCESSES
@@ -4212,8 +4221,76 @@ void test_syscalls_process()
     ledOn();
     const char *arg[] = { "/bin/test_process", nullptr };
     int exitcode=spawnAndWait(arg);
-    if(exitcode!=0) fail("test process has exited with a non-zero exit code");
+    if(!WIFEXITED(exitcode)) fail("spawnAndWait process returned due to error");
+    if(WEXITSTATUS(exitcode)!=0) fail("test process has exited with a non-zero exit code");
     ledOff();
+}
+
+//
+// Crash test (executed in a separate process)
+//
+
+void runCrash(const string& arg1, const string& arg2="", bool mustfail=true)
+{
+    const char *arg[] =
+    {
+        "/bin/test_crash",
+        arg1.c_str(),
+        arg2.empty() ? nullptr : arg2.c_str(),
+        nullptr
+    };
+    int exitcode=spawnAndWait(arg);
+    if(mustfail==false) return;
+    if(WIFEXITED(exitcode)) fail("test process did not crash");
+}
+
+template<typename T>
+std::string ptr(T val)
+{
+    char result[16];
+    sniprintf(result,16,"0x%x",reinterpret_cast<unsigned int>(val));
+    puts(result);
+    return result;
+}
+
+void test_crash_process()
+{
+    #ifdef __MPU_PRESENT
+    int i=1234;
+    ledOn();
+    runCrash("z");
+    runCrash("l","",false); //It's ok if this one does not end in a crash
+    runCrash("b"); //This test only passes if a debugger is NOT connected
+    runCrash("r","0"); //Read nullptr
+    runCrash("r",ptr(&i)); //Read kernel data
+    runCrash("r","0xf0000000"); //Read invalid address
+    runCrash("w","0"); //Write nullptr
+    runCrash("w",ptr(&i)); //Write kernel data
+    runCrash("w","0xf0000000"); //Write invalid address
+    runCrash("x","0"); //Execute nullptr
+    runCrash("x","1"); //Execute nullptr (thumb bit set)
+    runCrash("x",ptr(reinterpret_cast<unsigned int>(&puts)-1)); //Execute kernel code
+    runCrash("x",ptr(&puts)); //Execute kernel code (thunb bit set)
+    runCrash("x","0xf0000000"); //Execute invalid address
+    runCrash("x","0xf0000001"); //Execute invalid address (thumb bit set)
+    runCrash("e");
+    runCrash("i");
+    runCrash("s","0"); //Set stack to nullptr
+    runCrash("s","1"); //Set stack to nullptr (unaligned)
+    runCrash("s",ptr(&i)); //Set stack to kernel mem
+    runCrash("s",ptr(reinterpret_cast<unsigned int>(&i)-1)); //Set stack to kernel mem (unaligned)
+    runCrash("s","0xf0000000"); //Set stack to invalid address
+    runCrash("s","0xf0000000"); //Set stack to invalid address (unaligned)
+    runCrash("o");
+    runCrash("u");
+    runCrash("-");
+    runCrash("+");
+    if(i!=1234) fail("Kernel memory was modified");
+    ledOff();
+    puts("\nKernel did not crash, all good");
+    #else
+    puts("\nArchitecture does not have memory protection, test not done");
+    #endif
 }
 
 //

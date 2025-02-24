@@ -90,8 +90,7 @@ int spawnAndWait(const char *arg[])
     if(ec!=0) fail("spawnAndWait posix_spawn");
     pid_t pid2=waitpid(pid,&ec,0);
     if(pid!=pid2) fail("spawnAndWait wrong pid from wait");
-    if(!WIFEXITED(ec)) fail("spawnAndWait process returned due to error");
-    return WEXITSTATUS(ec);
+    return ec;
 }
 
 pid_t spawnWithPipe(const char *arg[], int& pipeFdOut)
