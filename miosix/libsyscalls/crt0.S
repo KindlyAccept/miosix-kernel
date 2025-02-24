@@ -102,13 +102,13 @@ _start:
 __call_ctor:
 	push {lr}
 	cmp  r4, r5
-	beq  .L101
-.L102:
+	beq  .L201
+.L200:
 	ldmia r4!, {r3}     /* thumb-1 equivalent of ldr  r3, [r4], #4 */
 	blx  r3
 	cmp  r5, r4
-	bne  .L102
-.L101:
+	bne  .L200
+.L201:
 	pop  {pc}
 
 /**
@@ -123,7 +123,7 @@ pthread_yield:
 	movs r7, #0
 	svc  0
 	movs r0, #0
-	pop {r7,pc}
+	pop  {r7,pc}
 
 /**
  * open, open a file
@@ -140,8 +140,10 @@ open:
 	movs r7, #2
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L300
+	pop  {r7,pc}
+.L300:
+	b    syscallfailed32
 
 /**
  * close, close a file
@@ -156,8 +158,10 @@ close:
 	movs r7, #3
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L400
+	pop  {r7,pc}
+.L400:
+	b    syscallfailed32
 
 /**
  * read, read from file
@@ -174,8 +178,10 @@ read:
 	movs r7, #4
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L500
+	pop  {r7,pc}
+.L500:
+	b    syscallfailed32
 
 /**
  * write, write to file
@@ -192,8 +198,10 @@ write:
 	movs r7, #5
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L600
+	pop  {r7,pc}
+.L600:
+	b    syscallfailed32
 
 /**
  * lseek
@@ -211,8 +219,10 @@ lseek:
 	movs r7, #6
 	svc  0
 	cmp  r1, #0        /* 64 bit negative check */
-	blt  syscallfailed64
-	pop {r7,pc}
+	blt  .L700
+	pop  {r7,pc}
+.L700:
+	b    syscallfailed64
 
 /**
  * stat
@@ -228,8 +238,10 @@ stat:
 	movs r7, #7
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L800
+	pop  {r7,pc}
+.L800:
+	b    syscallfailed32
 
 /**
  * lstat
@@ -245,8 +257,10 @@ lstat:
 	movs r7, #8
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L900
+	pop  {r7,pc}
+.L900:
+	b    syscallfailed32
 
 /**
  * fstat
@@ -262,8 +276,10 @@ fstat:
 	movs r7, #9
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1000
+	pop  {r7,pc}
+.L1000:
+	b    syscallfailed32
 
 /**
  * fcntl
@@ -280,8 +296,10 @@ fcntl:
 	movs r7, #10
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1100
+	pop  {r7,pc}
+.L1100:
+	b    syscallfailed32
 
 /**
  * ioctl
@@ -298,8 +316,10 @@ ioctl:
 	movs r7, #11
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1200
+	pop  {r7,pc}
+.L1200:
+	b    syscallfailed32
 
 /**
  * isatty
@@ -315,10 +335,10 @@ isatty:
 	movs r7, #12
 	svc  0
 	cmp  r0, #0
-	bgt  .L200
+	bgt  .L1300
 	bl   __isattyfailed
-.L200:
-	pop {r7,pc}
+.L1300:
+	pop  {r7,pc}
 
 /**
  * getcwd
@@ -335,11 +355,11 @@ getcwd:
 	movs r7, #13
 	svc  0
 	cmp  r1, #0
-	bge  .L300
+	bge  .L1400
 	movs r0, r1
 	bl   __getcwdfailed
-.L300:
-	pop {r7,pc}
+.L1400:
+	pop  {r7,pc}
 
 /**
  * chdir
@@ -354,8 +374,10 @@ chdir:
 	movs r7, #14
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1500
+	pop  {r7,pc}
+.L1500:
+	b    syscallfailed32
 
 /**
  * getdents
@@ -372,8 +394,10 @@ getdents:
 	movs r7, #15
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1600
+	pop  {r7,pc}
+.L1600:
+	b    syscallfailed32
 
 /**
  * mkdir
@@ -389,8 +413,10 @@ mkdir:
 	movs r7, #16
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1700
+	pop  {r7,pc}
+.L1700:
+	b    syscallfailed32
 
 /**
  * rmdir
@@ -405,8 +431,10 @@ rmdir:
 	movs r7, #17
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1800
+	pop  {r7,pc}
+.L1800:
+	b    syscallfailed32
 
 /**
  * link
@@ -422,8 +450,10 @@ link:
 	movs r7, #18
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L1900
+	pop  {r7,pc}
+.L1900:
+	b    syscallfailed32
 
 /**
  * unlink
@@ -438,8 +468,10 @@ unlink:
 	movs r7, #19
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L2000
+	pop  {r7,pc}
+.L2000:
+	b    syscallfailed32
 
 /**
  * symlink
@@ -455,8 +487,10 @@ symlink:
 	movs r7, #20
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L2100
+	pop  {r7,pc}
+.L2100:
+	b    syscallfailed32
 
 /**
  * readlink
@@ -473,8 +507,10 @@ readlink:
 	movs r7, #21
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L2200
+	pop  {r7,pc}
+.L2200:
+	b    syscallfailed32
 
 /**
  * truncate
@@ -490,8 +526,10 @@ truncate:
 	movs r7, #22
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L2300
+	pop  {r7,pc}
+.L2300:
+	b    syscallfailed32
 
 /**
  * ftruncate
@@ -507,8 +545,10 @@ ftruncate:
 	movs r7, #23
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L2400
+	pop  {r7,pc}
+.L2400:
+	b    syscallfailed32
 
 /**
  * rename
@@ -524,8 +564,10 @@ rename:
 	movs r7, #24
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L2500
+	pop  {r7,pc}
+.L2500:
+	b    syscallfailed32
 
 /* TODO: missing syscalls: chmod, fchmod, chown, fchown, lchown */
 
@@ -542,8 +584,10 @@ dup:
 	movs r7, #30
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L3100
+	pop  {r7,pc}
+.L3100:
+	b    syscallfailed32
 
 /**
  * dup2
@@ -559,8 +603,10 @@ dup2:
 	movs r7, #31
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L3200
+	pop  {r7,pc}
+.L3200:
+	b    syscallfailed32
 
 /**
  * pipe
@@ -576,10 +622,12 @@ pipe:
 	movs r7, #32
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
+	blt  .L3300
 	str  r1, [r3]
 	str  r2, [r3, #4]
-	pop {r7,pc}
+	pop  {r7,pc}
+.L3300:
+	b    syscallfailed32
 
 /* TODO: missing syscalls: access */
 
@@ -594,7 +642,7 @@ _ZN6miosix7getTimeEv:
 	push {r7,lr}
 	movs r7, #36
 	svc  0
-	pop {r7,pc}
+	pop  {r7,pc}
 
 /**
  * miosix::nanoSleepUntil, nonstandard syscall
@@ -607,7 +655,7 @@ _ZN6miosix14nanoSleepUntilEx:
 	push {r7,lr}
 	movs r7, #37
 	svc  0
-	pop {r7,pc}
+	pop  {r7,pc}
 
 /**
  * clock_gettime
@@ -633,9 +681,9 @@ clock_gettime:
 	str  r1, [r4, #8]
 	pop  {r4, r7}
 	cmp  r0, #0
-	blt  .L400        /* can't use syscallfailed32 as we haven't pushed r7,lr */
+	blt  .L3900        /* can't use syscallfailed32 as we haven't pushed r7,lr */
 	bx   lr
-.L400:
+.L3900:
 	b    __seterrno32 @ tail call
 
 /**
@@ -660,8 +708,10 @@ clock_settime:
 	movs r7, #39
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
+	blt  .L4000
 	pop  {r7, pc}
+.L4000:
+	b    syscallfailed32
 
 /**
  * clock_nanosleep
@@ -678,7 +728,7 @@ clock_nanosleep:
 	push {r7, lr}
 	movs r7, #40
 	svc  0
-	pop {r7,pc}
+	pop  {r7,pc}
 
 /**
  * clock_getres
@@ -695,15 +745,17 @@ clock_getres:
 	movs r7, #41
 	svc  0
 	cmp  r2, #0
-	beq  .L500        /* req can be nullptr */
+	beq  .L4200        /* req can be nullptr */
 	str  r1, [r2, #8]
 	movs r3, #0
 	str  r3, [r2, #4]
 	str  r3, [r2, #0]
-.L500:
+.L4200:
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L4201
+	pop  {r7,pc}
+.L4201:
+	b    syscallfailed32
 
 /* TODO: missing syscalls: clock_adjtime */
 
@@ -733,7 +785,7 @@ _execve:
 	push {r7,lr}
 	movs r7, #44
 	svc  0
-	b syscallfailed32 /* if execve returns, then it failed */
+	b    syscallfailed32 /* if execve returns, then it failed */
 
 /**
  * __do_spawn, syscall underneath posix_spawn, start a new process running the
@@ -753,7 +805,7 @@ __do_spawn:
 	push {r7,lr}
 	movs r7, #45
 	svc  0
-	pop {r7,pc}
+	pop  {r7,pc}
 
 /* TODO: missing syscalls */
 
@@ -772,8 +824,10 @@ waitpid:
 	movs r7, #47
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L4800
+	pop  {r7,pc}
+.L4800:
+	b    syscallfailed32
 
 /**
  * getpid
@@ -786,7 +840,7 @@ getpid:
 	push {r7,lr}
 	movs r7, #48
 	svc  0
-	pop {r7,pc}
+	pop  {r7,pc}
 
 /**
  * getppid
@@ -799,7 +853,7 @@ getppid:
 	push {r7,lr}
 	movs r7, #49
 	svc  0
-	pop {r7,pc}
+	pop  {r7,pc}
 
 /* TODO: missing syscalls: getuid, getgid, geteuid, getegid, setuid, setgid */
 
@@ -816,8 +870,10 @@ sysconf:
 	movs r7, #59
 	svc  0
 	cmp  r0, #0
-	blt  syscallfailed32
-	pop {r7,pc}
+	blt  .L6000
+	pop  {r7,pc}
+.L6000:
+	b    syscallfailed32
 
 /* common jump target for all failing syscalls with 32 bit return value */
 .section .text.__seterrno32
