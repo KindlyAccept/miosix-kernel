@@ -14,7 +14,7 @@ all: $(OBJ)
 	$(Q)$(CXX)    $(LFLAGS) -o $(BIN) $(OBJ) $(LINK_LIBS)
 	$(Q)$(SZ)     $(BIN)
 	$(Q)$(STRIP)  $(BIN)
-	$(Q)$(POSTLD) $(BIN) --ramsize=16384 --stacksize=2048 --strip-sectheader
+	$(Q)$(POSTLD) $(BIN) --ramsize=4096 --stacksize=512 --strip-sectheader
 
 clean:
 	-rm -f $(OBJ) $(OBJ:.o=.d) $(BIN) $(notdir $(BIN)).map
