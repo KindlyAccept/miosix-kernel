@@ -63,10 +63,17 @@ include(LinkTarget)
 
 # List here your source files (.s, .c and .cpp)
 add_executable(main main.cpp)
-miosix_link_target(main)
 
 # List here additional include directories
 # target_include_directories(main PRIVATE here_your_includes)
 
+# List here additional compile options
+# target_compile_options(main PRIVATE here_your_compile_options)
+
+# List here additional link directories
+# target_link_directories(main PRIVATE here_your_link_directories)
+
 # List here additional static libraries
 # target_link_libraries(main PRIVATE here_your_libraries)
+
+miosix_link_target(main)
