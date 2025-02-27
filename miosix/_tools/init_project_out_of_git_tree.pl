@@ -58,6 +58,7 @@ sub copy_and_fixup_makefile
 
 copy("$source/main.cpp","$target/main.cpp") or die;
 copy_and_fixup_makefile("$source/Makefile","$target/Makefile");
+copy("$source/CMakeLists.txt","$target/CMakeLists.txt") or die;
 dircopy("$source/miosix/config","$target/config") or die;
 
 print "Successfully created Miosix project\n";
