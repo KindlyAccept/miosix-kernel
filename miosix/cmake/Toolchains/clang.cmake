@@ -63,6 +63,12 @@ set(CMAKE_ASM_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 set(CMAKE_C_COMPILER_TARGET   ${CLANG_TARGET_TRIPLE})
 set(CMAKE_CXX_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 
+# Miosix gcc compiler
+set(MIOSIX_GCC_PATH /Users/nico/CLionProjects/miosix/miosix-kernel/miosix/_tools/compiler/gcc-9.2.0-mp3.3/gcc/arm-miosix-eabi CACHE PATH "Path to the miosix gcc compiler")
+
+# Miosix llvm compiler
+set(MIOSIX_LLVM_PATH /Users/nico/CLionProjects/miosix/miosix-kernel/miosix/_tools/compiler/llvm-project/llvm/install CACHE PATH "Path to the miosix llvm compiler")
+
 # gcc libraries paths
 set(CMAKE_SYSROOT ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib)
 include_directories(${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/include)

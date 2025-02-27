@@ -36,14 +36,6 @@ endfunction()
 set(MIOSIX_KPATH ../miosix-kernel/miosix CACHE PATH "Path to the miosix kernel")
 make_absolute_path(MIOSIX_KPATH)
 
-# Set here the path to your miosix gcc compiler
-set(MIOSIX_GCC_PATH /opt/arm-miosix-eabi CACHE PATH "Path to the miosix gcc compiler")
-make_absolute_path(MIOSIX_GCC_PATH)
-
-# Set here the path to your miosix llvm compiler
-set(MIOSIX_LLVM_PATH /opt/miosix-llvm CACHE PATH "Path to the miosix llvm compiler")
-make_absolute_path(MIOSIX_LLVM_PATH)
-
 # Set here your toolchain file
 set(CMAKE_TOOLCHAIN_FILE ${MIOSIX_KPATH}/cmake/Toolchains/clang.cmake CACHE PATH "Path to your toolchain file")
 make_absolute_path(CMAKE_TOOLCHAIN_FILE)
