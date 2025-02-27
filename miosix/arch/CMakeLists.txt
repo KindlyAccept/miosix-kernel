@@ -30,14 +30,30 @@ set(MIOSIX_BOARDS
     stm32f767zi_nucleo
 )
 
+option(MIOSIX_PRINT_BOARD_LIST "Prints a list of the available boards" OFF)
+
+set(BOARD_LIST "Available boards:")
+foreach(MIOSIX_OPT_BOARD ${MIOSIX_BOARDS})
+    string(APPEND BOARD_LIST "\n   - ${MIOSIX_OPT_BOARD}")
+endforeach()
+
 # Target board option, this also implicitly select the target architecture
 set(MIOSIX_OPT_BOARD NOT_SET CACHE STRING "Target board")
 set_property(CACHE MIOSIX_OPT_BOARD PROPERTY STRINGS ${MIOSIX_BOARDS})
 if(MIOSIX_OPT_BOARD STREQUAL NOT_SET)
-    message(FATAL_ERROR "You must specify a target board with MIOSIX_OPT_BOARD")
+    message(FATAL_ERROR
+            " * You must specify a target board with MIOSIX_OPT_BOARD\n"
+            " * Remember to delete cmake cache for changes in CMakeLists.txt to have effect\n"
+            " * ${BOARD_LIST}")
 elseif(NOT MIOSIX_OPT_BOARD IN_LIST MIOSIX_BOARDS)
-    message(FATAL_ERROR "Selected board is not in the MIOSIX_BOARDS list")
-    message(MIOSIX_BOARDS)
+    print_board_list()
+    message(FATAL_ERROR
+            " * Selected board is not in the MIOSIX_BOARDS list\n"
+            " * Remember to delete cmake cache for changes in CMakeLists.txt to have effect\n"
+            " * ${BOARD_LIST}")
+elseif(MIOSIX_PRINT_BOARD_LIST)
+    # Optionally print the board list
+    message(STATUS ${BOARD_LIST})
 endif()
 
 # Optimization flags are set with CMAKE_<LANG>_FLAGS_<CONFIG>

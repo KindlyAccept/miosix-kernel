@@ -142,19 +142,8 @@ add_custom_command(
     COMMAND_EXPAND_LISTS
 )
 
-# Optionally print the board list
-option(MIOSIX_PRINT_BOARD_LIST "Prints a list of the available boards" OFF)
-if(MIOSIX_PRINT_BOARD_LIST)
-    message(STATUS "Available boards:")
-    foreach(MIOSIX_OPT_BOARD ${MIOSIX_BOARDS})
-        message(STATUS "\t${MIOSIX_OPT_BOARD}")
-    endforeach()
-endif()
-
-set(MIOSIX_GCC_PATH /opt/arm-miosix-eabi CACHE PATH "Directory of miosix gcc compiler")
-
-# Set multilib paths for Clang
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # Set multilib paths for Clang
     target_include_directories(miosix PUBLIC
         ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi
         ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0
@@ -166,5 +155,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         ${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/${MIOSIX_MULTILIB_PATH}
     )
 
+    # Set gcc linker for clang
     target_link_options(miosix PUBLIC -fuse-ld=${MIOSIX_GCC_PATH}/bin/arm-miosix-eabi-ld)
 endif()
