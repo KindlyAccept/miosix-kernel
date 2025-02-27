@@ -38,6 +38,7 @@ set(CMAKE_ASM_COMPILER ${MIOSIX_PREFIX}-gcc) #Compiling asm with GCC to allow #i
 set(CMAKE_C_COMPILER   ${MIOSIX_PREFIX}-gcc)
 set(CMAKE_CXX_COMPILER ${MIOSIX_PREFIX}-g++)
 set(CMAKE_AR           ${MIOSIX_PREFIX}-ar)
+set(CMAKE_RANLIB       ${MIOSIX_PREFIX}-ranlib)
 set(CMAKE_OBJCOPY      ${MIOSIX_PREFIX}-objcopy)
 set(CMAKE_OBJDUMP      ${MIOSIX_PREFIX}-objdump)
 set(CMAKE_SIZE         ${MIOSIX_PREFIX}-size)
