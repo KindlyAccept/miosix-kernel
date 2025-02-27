@@ -162,12 +162,6 @@ add_custom_command(
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # Set multilib paths for Clang
-    target_include_directories(miosix PUBLIC
-        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi
-        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0
-        ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include
-    )
-
     target_link_directories(miosix PUBLIC
         ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib/${MIOSIX_MULTILIB_PATH}
         ${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/${MIOSIX_MULTILIB_PATH}
