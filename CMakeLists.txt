@@ -37,7 +37,8 @@ set(MIOSIX_KPATH ../miosix-kernel/miosix CACHE PATH "Path to the miosix kernel")
 make_absolute_path(MIOSIX_KPATH)
 
 # Set here your toolchain file
-set(CMAKE_TOOLCHAIN_FILE ${MIOSIX_KPATH}/cmake/Toolchains/clang.cmake CACHE PATH "Path to your toolchain file")
+set(CMAKE_TOOLCHAIN_FILE ${MIOSIX_KPATH}/cmake/Toolchains/gcc.cmake CACHE PATH "Path to your toolchain file")
+# set(CMAKE_TOOLCHAIN_FILE ${MIOSIX_KPATH}/cmake/Toolchains/clang.cmake CACHE PATH "Path to your toolchain file")
 make_absolute_path(CMAKE_TOOLCHAIN_FILE)
 
 # Set your cmake build type here
