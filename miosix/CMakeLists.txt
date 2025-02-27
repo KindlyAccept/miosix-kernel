@@ -100,22 +100,22 @@ foreach(VARIABLE ${REQUIRED_VARIABLES})
 endforeach()
 
 # The user can set a custom path for miosix_settings.h
-set(MIOSIX_SETTINGS_PATH ${MIOSIX_KPATH}/default CACHE PATH "Include directory for miosix_settings.h")
-mark_as_advanced(MIOSIX_SETTINGS_PATH)
-if(NOT MIOSIX_SETTINGS_PATH STREQUAL ${MIOSIX_KPATH}/default)
-    message(NOTICE "You have set a custom path for miosix_settings.h")
+set(MIOSIX_CONFIG_PATH ${MIOSIX_KPATH}/config CACHE PATH "Include directory for miosix config")
+mark_as_advanced(MIOSIX_CONFIG_PATH)
+if(NOT MIOSIX_CONFIG_PATH STREQUAL ${MIOSIX_KPATH}/config)
+    message(NOTICE "You have set a custom path for miosix config: ${MIOSIX_CONFIG_PATH}")
 endif()
 
 # Define the miosix library with kernel and architecture sources
 add_library(miosix STATIC ${MIOSIX_KERNEL_SRC} ${MIOSIX_ARCH_SRC})
 
 target_include_directories(miosix PUBLIC
+    ${MIOSIX_CONFIG_PATH}
     ${MIOSIX_KPATH}
     ${MIOSIX_KPATH}/arch/common
     ${MIOSIX_ARCH_INC}
     ${MIOSIX_BOARD_INC}
     ${MIOSIX_BOARD_SETTINGS_INC}
-    ${MIOSIX_SETTINGS_PATH}
 )
 
 target_compile_options(miosix PUBLIC

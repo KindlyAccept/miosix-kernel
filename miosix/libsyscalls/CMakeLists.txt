@@ -49,12 +49,12 @@ endforeach()
 add_library(syscalls STATIC crt0.s crt1.cpp memoryprofiling.cpp)
 
 target_include_directories(syscalls PUBLIC
+    ${MIOSIX_CONFIG_PATH}
     ${MIOSIX_KPATH}
     ${MIOSIX_KPATH}/arch/common
     ${MIOSIX_ARCH_INC}
     ${MIOSIX_BOARD_INC}
     ${MIOSIX_BOARD_SETTINGS_INC}
-    ${MIOSIX_SETTINGS_PATH}
 )
 
 # ASM/C/C++ flags for processes
