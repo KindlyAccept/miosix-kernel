@@ -32,7 +32,25 @@ project(Miosix
     LANGUAGES C CXX
 )
 
-set(MIOSIX_KPATH ${CMAKE_CURRENT_LIST_DIR} CACHE PATH "Path to the miosix kernel")
+# To avoid printing an empty string
+if(MIOSIX_PRINT_BOARD_LIST)
+    set(MIOSIX_PRINT_BOARD_LIST ON)
+else()
+    set(MIOSIX_PRINT_BOARD_LIST OFF)
+endif()
+
+# Print build configuration
+message(STATUS
+        "Build Configuration\n"
+        "   - MIOSIX_KPATH:             ${MIOSIX_KPATH}\n"
+        "   - MIOSIX_CONFIG_PATH:       ${MIOSIX_CONFIG_PATH}\n"
+        "   - MIOSIX_GCC_PATH:          ${MIOSIX_GCC_PATH}\n"
+        "   - MIOSIX_LLVM_PATH:         ${MIOSIX_LLVM_PATH}\n"
+        "   - CMAKE_TOOLCHAIN_FILE:     ${CMAKE_TOOLCHAIN_FILE}\n"
+        "   - MIOSIX_OPT_BOARD:         ${MIOSIX_OPT_BOARD}\n"
+        "   - MIOSIX_PRINT_BOARD_LIST:  ${MIOSIX_PRINT_BOARD_LIST}\n"
+        "   - CMAKE_BUILD_TYPE:         ${CMAKE_BUILD_TYPE}\n"
+        "   Remember to delete cmake cache for changes in CMakeLists.txt to have effect (or use --fresh to ignore it)")
 
 set(MIOSIX_KERNEL_SRC
     ${MIOSIX_KPATH}/kernel/kernel.cpp

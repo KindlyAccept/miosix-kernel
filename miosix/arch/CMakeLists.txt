@@ -43,13 +43,13 @@ set_property(CACHE MIOSIX_OPT_BOARD PROPERTY STRINGS ${MIOSIX_BOARDS})
 if(MIOSIX_OPT_BOARD STREQUAL NOT_SET)
     message(FATAL_ERROR
             " * You must specify a target board with MIOSIX_OPT_BOARD\n"
-            " * Remember to delete cmake cache for changes in CMakeLists.txt to have effect\n"
+            " * Remember to delete cmake cache for changes in CMakeLists.txt to have effect (or use --fresh to ignore it)\n"
             " * ${BOARD_LIST}")
 elseif(NOT MIOSIX_OPT_BOARD IN_LIST MIOSIX_BOARDS)
     print_board_list()
     message(FATAL_ERROR
             " * Selected board is not in the MIOSIX_BOARDS list\n"
-            " * Remember to delete cmake cache for changes in CMakeLists.txt to have effect\n"
+            " * Remember to delete cmake cache for changes in CMakeLists.txt to have effect (or use --fresh to ignore it)\n"
             " * ${BOARD_LIST}")
 elseif(MIOSIX_PRINT_BOARD_LIST)
     # Optionally print the board list
