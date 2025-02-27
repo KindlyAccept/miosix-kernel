@@ -67,8 +67,8 @@ set(CMAKE_CXX_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 set(CMAKE_SYSROOT ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib)
 include_directories(${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/include)
 # clang libraries paths
-include_directories(${MIOSIX_CLANG_PATH}/include)
-link_directories(${MIOSIX_CLANG_PATH}/lib)
+include_directories(${MIOSIX_LLVM_PATH}/include)
+link_directories(${MIOSIX_LLVM_PATH}/lib)
 
 # We want to test for a static library and not an executable
 # reference: https://stackoverflow.com/questions/53633705/cmake-the-c-compiler-is-not-able-to-compile-a-simple-test-program

@@ -25,12 +25,40 @@
 
 cmake_minimum_required(VERSION 3.16)
 
+function(make_absolute_path PATH_VAR)
+    get_filename_component(ABS_PATH "${${PATH_VAR}}" REALPATH)
+    set(${PATH_VAR} "${ABS_PATH}" PARENT_SCOPE)
+endfunction()
+
+# Remember to delete cmake cache for changes in CMakeLists.txt to have effect (or use --fresh to ignore it)
+
+# Set here the path to miosix kernel
+set(MIOSIX_KPATH ../miosix-kernel/miosix CACHE PATH "Path to the miosix kernel")
+make_absolute_path(MIOSIX_KPATH)
+
+# Set here the path to your miosix gcc compiler
+set(MIOSIX_GCC_PATH /opt/arm-miosix-eabi CACHE PATH "Path to the miosix gcc compiler")
+make_absolute_path(MIOSIX_GCC_PATH)
+
+# Set here the path to your miosix llvm compiler
+set(MIOSIX_LLVM_PATH /opt/miosix-llvm CACHE PATH "Path to the miosix llvm compiler")
+make_absolute_path(MIOSIX_LLVM_PATH)
+
+# Set here your toolchain file
+set(CMAKE_TOOLCHAIN_FILE ${MIOSIX_KPATH}/cmake/Toolchains/clang.cmake CACHE PATH "Path to your toolchain file")
+make_absolute_path(CMAKE_TOOLCHAIN_FILE)
+
+# Set your cmake build type here
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelW")
+
 project(Main C CXX ASM)
+
+set(MIOSIX_CONFIG_PATH ${CMAKE_CURRENT_LIST_DIR} CACHE PATH "Include directory for miosix config")
 
 # Set here your board of choice
 set(MIOSIX_OPT_BOARD NOT_SET CACHE STRING "Target board")
 
-add_subdirectory(miosix EXCLUDE_FROM_ALL)
+add_subdirectory(${MIOSIX_KPATH} ${CMAKE_BINARY_DIR}/miosix EXCLUDE_FROM_ALL)
 include(LinkTarget)
 
 # List here your source files (.s, .c and .cpp)
