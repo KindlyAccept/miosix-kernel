@@ -1382,6 +1382,8 @@ long int sysconf(int query)
             return 1;
         case _SC_HOST_NAME_MAX:
             return hostnameMax;
+        case _SC_THREAD_STACK_MIN:
+          return miosix::STACK_MIN;
         // Miosix-specific sysconf, used by memoryprofiling.cpp in userspace
         case 100000:
             return miosix::WATERMARK_LEN;
