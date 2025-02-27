@@ -37,21 +37,21 @@ set(CMAKE_ASM_COMPILER clang)
 set(CMAKE_C_COMPILER   clang)
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_AR           ${MIOSIX_PREFIX}-ar)
+set(CMAKE_RANLIB       ${MIOSIX_PREFIX}-ranlib)
 set(CMAKE_OBJCOPY      ${MIOSIX_PREFIX}-objcopy)
 set(CMAKE_OBJDUMP      ${MIOSIX_PREFIX}-objdump)
 set(CMAKE_SIZE         ${MIOSIX_PREFIX}-size)
 
 # Optimization flags for each language and build configuration
-set(CMAKE_BUILD_TYPE  "Release")
 set(CMAKE_ASM_FLAGS_DEBUG "")
-set(CMAKE_C_FLAGS_DEBUG "-g -O0")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+set(CMAKE_C_FLAGS_DEBUG "-g -gdwarf-4 -O0")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -gdwarf-4 -O0")
 set(CMAKE_ASM_FLAGS_RELEASE "")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_ASM_FLAGS_RELWITHDEBINFO "")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -O2")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -gdwarf-4 -O2")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -gdwarf-4 -O2")
 set(CMAKE_ASM_FLAGS_MINSIZEREL "")
 set(CMAKE_C_FLAGS_MINSIZEREL "-Os")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os")
@@ -63,7 +63,12 @@ set(CMAKE_ASM_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 set(CMAKE_C_COMPILER_TARGET   ${CLANG_TARGET_TRIPLE})
 set(CMAKE_CXX_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 
-set(CMAKE_SYSROOT /opt/arm-miosix-eabi/arm-miosix-eabi/lib)
+# gcc libraries paths
+set(CMAKE_SYSROOT ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib)
+include_directories(${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/include)
+# clang libraries paths
+include_directories(${MIOSIX_CLANG_PATH}/include)
+link_directories(${MIOSIX_CLANG_PATH}/lib)
 
 # We want to test for a static library and not an executable
 # reference: https://stackoverflow.com/questions/53633705/cmake-the-c-compiler-is-not-able-to-compile-a-simple-test-program
