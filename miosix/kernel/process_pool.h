@@ -79,32 +79,7 @@ public:
     /**
      * Print the state of the allocator, used for debugging
      */
-    void printAllocatedBlocks()
-    {
-        using namespace std;
-        map<unsigned int*, unsigned int>::iterator it;
-        cout<<endl;
-        for(it=allocatedBlocks.begin();it!=allocatedBlocks.end();it++)
-            cout <<"block of size " << it->second
-                 << " allocated @ " << it->first<<endl;
-        
-        cout<<"Bitmap:"<<endl;
-        const int SHIFT = 8 * sizeof(unsigned int);
-        const unsigned int MASK = 1 << (SHIFT-1);
-        int bitarray[32];
-        for(int i=0; i<(poolSize/blockSize)/(sizeof(unsigned int)*8);i++)
-        {   
-            int value=bitmap[i];
-            for ( int j = 0; j < SHIFT; j++ ) 
-            {
-                bitarray[31-j]= ( value & MASK ? 1 : 0 );
-                value <<= 1;
-            }
-            for(int j=0;j<32;j++)
-                cout<<bitarray[j];
-            cout << endl;
-        }  
-    }
+    void printAllocatedBlocks();
     #endif //TEST_ALLOC
     
 private:
