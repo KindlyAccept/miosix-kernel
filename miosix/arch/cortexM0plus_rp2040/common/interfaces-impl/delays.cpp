@@ -41,20 +41,22 @@ static inline __attribute__((always_inline)) void delayUsImpl(unsigned int us)
         // 7 cycles per iteration @ 133 MHz = 1/19 us per iteration
         uint32_t iter_count = us*19-2;
         asm volatile(
+            ".syntax unified\n"
             ".align 2       \n"
             "1:  nop        \n"
             "    nop        \n"
             "    nop        \n"
-            "    sub  %0, #1\n"
+            "    subs %0, #1\n"
             "    cmp  %0, #0\n"
             "    bne  1b    \n":"+r"(iter_count)::"cc");
     } else if(cpuFrequency==125000000) {
         // 5 cycles per iteration @ 125 MHz = 1/25 us per iteration
         uint32_t iter_count = us*25-2;
         asm volatile(
+            ".syntax unified\n"
             ".align 2       \n"
             "1:  nop        \n"
-            "    sub  %0, #1\n"
+            "    subs %0, #1\n"
             "    cmp  %0, #0\n"
             "    bne  1b    \n":"+r"(iter_count)::"cc");
     }
