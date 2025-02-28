@@ -93,7 +93,7 @@ set(MIOSIX_C_FLAGS
 )
 set(MIOSIX_CXX_FLAGS
     -D_MIOSIX_BOARDNAME="${MIOSIX_OPT_BOARD}" -D_DEFAULT_SOURCE=1
-    -std=c++14 -ffunction-sections -Wall -Werror=return-type -g
+    -ffunction-sections -Wall -Werror=return-type -g
 )
 
 # Now include the architecture specific CMakeLists that will:
