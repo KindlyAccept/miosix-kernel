@@ -98,6 +98,13 @@ set(MIOSIX_KERNEL_SRC
     ${MIOSIX_KPATH}/util/lcd44780.cpp
 )
 
+# The user can set a custom path for miosix_settings.h
+set(MIOSIX_CONFIG_PATH ${MIOSIX_KPATH}/config CACHE PATH "Include directory for miosix config")
+mark_as_advanced(MIOSIX_CONFIG_PATH)
+if(NOT MIOSIX_CONFIG_PATH STREQUAL ${MIOSIX_KPATH}/config)
+    message(NOTICE "You have set a custom path for miosix config: ${MIOSIX_CONFIG_PATH}")
+endif()
+
 # Include the architecture options
 include(${MIOSIX_KPATH}/arch/CMakeLists.txt)
 
@@ -119,13 +126,6 @@ foreach(VARIABLE ${REQUIRED_VARIABLES})
         message(FATAL_ERROR "arch/CMakeLists.txt must define ${VARIABLE}")
     endif()
 endforeach()
-
-# The user can set a custom path for miosix_settings.h
-set(MIOSIX_CONFIG_PATH ${MIOSIX_KPATH}/config CACHE PATH "Include directory for miosix config")
-mark_as_advanced(MIOSIX_CONFIG_PATH)
-if(NOT MIOSIX_CONFIG_PATH STREQUAL ${MIOSIX_KPATH}/config)
-    message(NOTICE "You have set a custom path for miosix config: ${MIOSIX_CONFIG_PATH}")
-endif()
 
 # Define the miosix library with kernel and architecture sources
 add_library(miosix STATIC ${MIOSIX_KERNEL_SRC} ${MIOSIX_ARCH_SRC})
