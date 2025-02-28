@@ -452,15 +452,18 @@ namespace miosix {
 
 void callPthreadKeyDestructors(void *pthreadKeyValues[MAX_PTHREAD_KEYS])
 {
-    Lock<FastMutex> l(pthreadKeyMutex);
     for(unsigned int i=0;i<MAX_PTHREAD_KEYS;i++)
     {
         if(pthreadKeyValues[i]==nullptr) continue; //No value, nothing to do
         //POSIX wants destructor called after key value is set to nullptr
         auto temp=pthreadKeyValues[i];
         pthreadKeyValues[i]=nullptr;
-        if(keyDestructor[i]==nullptr) continue; //No destructor, discard temp
-        keyDestructor[i](temp);
+        destructor_type destructor=nullptr;
+        {
+            Lock<FastMutex> l(pthreadKeyMutex);
+            destructor=keyDestructor[i];
+        }
+        if(destructor) destructor(temp);
     }
     //NOTE: the POSIX spec state that calling a destructor may set another key
     //and we should play whack-a-mole calling again destructors till all values
