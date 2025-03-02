@@ -63,23 +63,23 @@ set(CMAKE_ASM_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 set(CMAKE_C_COMPILER_TARGET   ${CLANG_TARGET_TRIPLE})
 set(CMAKE_CXX_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 
-# Miosix gcc compiler
+# Miosix llvm compiler path
+find_program(MIOSIX_LLVM_PATH NAMES ${CMAKE_CXX_COMPILER})
+string(REGEX REPLACE "/bin/[^/]+$" "" MIOSIX_LLVM_PATH ${MIOSIX_LLVM_PATH})
+set(CMAKE_SYSROOT ${MIOSIX_LLVM_PATH})
+
+# Miosix gcc compiler path
 set(MIOSIX_GCC_PATH /Users/nico/CLionProjects/miosix/miosix-kernel/miosix/_tools/compiler/gcc-9.2.0-mp3.3/gcc/arm-miosix-eabi CACHE PATH "Path to the miosix gcc compiler")
 
-# Miosix llvm compiler
-set(MIOSIX_LLVM_PATH /Users/nico/CLionProjects/miosix/miosix-kernel/miosix/_tools/compiler/llvm-project/llvm/install CACHE PATH "Path to the miosix llvm compiler")
-
-# gcc libraries paths
-set(CMAKE_SYSROOT ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib)
-# clang libraries paths
-include_directories(${MIOSIX_LLVM_PATH}/include)
-link_directories(${MIOSIX_LLVM_PATH}/lib)
-# gcc multilib include paths
+# gcc multilib include paths (multilib link directories are set in miosix/CMakeLists.txt, after knowing the target board)
 include_directories(
     ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0/arm-miosix-eabi
     ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include/c++/9.2.0
     ${MIOSIX_GCC_PATH}/arm-miosix-eabi/include
 )
+
+# Set gcc linker for clang
+add_link_options(-fuse-ld=${MIOSIX_GCC_PATH}/bin/arm-miosix-eabi-ld)
 
 # We want to test for a static library and not an executable
 # reference: https://stackoverflow.com/questions/53633705/cmake-the-c-compiler-is-not-able-to-compile-a-simple-test-program

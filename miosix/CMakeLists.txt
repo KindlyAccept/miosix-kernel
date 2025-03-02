@@ -47,7 +47,6 @@ message(STATUS
         "   - MIOSIX_KPATH:             ${MIOSIX_KPATH}\n"
         "   - MIOSIX_CONFIG_PATH:       ${MIOSIX_CONFIG_PATH}\n"
         "   - MIOSIX_GCC_PATH:          ${MIOSIX_GCC_PATH}\n"
-        "   - MIOSIX_LLVM_PATH:         ${MIOSIX_LLVM_PATH}\n"
         "   - CMAKE_TOOLCHAIN_FILE:     ${CMAKE_TOOLCHAIN_FILE}\n"
         "   - MIOSIX_OPT_BOARD:         ${MIOSIX_OPT_BOARD}\n"
         "   - MIOSIX_PRINT_BOARD_LIST:  ${MIOSIX_PRINT_BOARD_LIST}\n"
@@ -169,7 +168,4 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         ${MIOSIX_GCC_PATH}/arm-miosix-eabi/lib/${MIOSIX_MULTILIB_PATH}
         ${MIOSIX_GCC_PATH}/lib/gcc/arm-miosix-eabi/9.2.0/${MIOSIX_MULTILIB_PATH}
     )
-
-    # Set gcc linker for clang
-    target_link_options(miosix PUBLIC -fuse-ld=${MIOSIX_GCC_PATH}/bin/arm-miosix-eabi-ld)
 endif()
