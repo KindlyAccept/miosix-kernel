@@ -4258,7 +4258,7 @@ void test_crash_process()
     #ifdef __MPU_PRESENT
     int i=1234;
     ledOn();
-    runCrash("z");
+    runCrash("z","",false); //This does not crash if the CPU has no HW divider
     runCrash("l","",false); //It's ok if this one does not end in a crash
     runCrash("b"); //This test only passes if a debugger is NOT connected
     runCrash("r","0"); //Read nullptr
