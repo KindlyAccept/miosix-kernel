@@ -860,7 +860,8 @@ Process::SvcResult Process::handleSvc(SyscallParameters sp)
                 int pid=sp.getParameter(0);
                 auto wstatus=reinterpret_cast<int*>(sp.getParameter(1));
                 int options=sp.getParameter(2);
-                if(mpu.withinForWriting(wstatus,sizeof(int)) && aligned(wstatus))
+                if(wstatus==nullptr ||
+                   (mpu.withinForWriting(wstatus,sizeof(int)) && aligned(wstatus)))
                 {
                     int result=Process::waitpid(pid,wstatus,options);
                     sp.setParameter(0,result);
