@@ -905,9 +905,17 @@ void Thread::IRQenableIrqAndWaitImpl()
     const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
     auto savedNesting=interruptDisableNesting; //For InterruptDisableLock
     interruptDisableNesting=0;
-    fastEnableInterrupts();
+    #ifdef WITH_SMP
+    auto savedHoldingCore=globalIntrNestLockHoldingCore;
+    globalIntrNestLockHoldingCore=0xff;
+    #endif
+    globalInterruptEnableUnlock();
     Thread::yield(); //Here the wait becomes effective
-    fastDisableInterrupts();
+    globalInterruptDisableLock();
+    #ifdef WITH_SMP
+    if(globalIntrNestLockHoldingCore!=0xff) errorHandler(UNEXPECTED);
+    globalIntrNestLockHoldingCore=savedHoldingCore;
+    #endif
     if(interruptDisableNesting!=0) errorHandler(UNEXPECTED);
     interruptDisableNesting=savedNesting;
 }
@@ -921,9 +929,17 @@ TimedWaitResult Thread::IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs)
     IRQaddToSleepingList(&sleepData);
     auto savedNesting=interruptDisableNesting; //For InterruptDisableLock
     interruptDisableNesting=0;
-    fastEnableInterrupts();
+    #ifdef WITH_SMP
+    auto savedHoldingCore=globalIntrNestLockHoldingCore;
+    globalIntrNestLockHoldingCore=0xff;
+    #endif
+    globalInterruptEnableUnlock();
     Thread::yield(); //Here the wait becomes effective
-    fastDisableInterrupts();
+    globalInterruptDisableLock();
+    #ifdef WITH_SMP
+    if(globalIntrNestLockHoldingCore!=0xff) errorHandler(UNEXPECTED);
+    globalIntrNestLockHoldingCore=savedHoldingCore;
+    #endif
     if(interruptDisableNesting!=0) errorHandler(UNEXPECTED);
     interruptDisableNesting=savedNesting;
     bool removed=sleepingList.removeFast(&sleepData);
