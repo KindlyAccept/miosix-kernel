@@ -12,6 +12,7 @@ include $(KPATH)/Makefile.kcommon
 ## These files will end up in libmiosix.a
 SRC :=                                                                     \
 kernel/kernel.cpp                                                          \
+kernel/lock.cpp                                                            \
 kernel/sync.cpp                                                            \
 kernel/error.cpp                                                           \
 kernel/pthread.cpp                                                         \

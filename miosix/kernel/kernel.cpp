@@ -33,7 +33,6 @@
 #include "process.h"
 #include "kernel/scheduler/scheduler.h"
 #include "stdlib_integration/libc_integration.h"
-#include "interfaces/atomic_ops.h"
 #include "interfaces_private/cpu.h"
 #include "interfaces_private/userspace.h"
 #include "interfaces_private/os_timer.h"
@@ -73,35 +72,19 @@ static volatile bool existDeleted=false;
 
 IntrusiveList<SleepData> sleepingList;///list of sleeping threads
 
-///\internal !=0 after pauseKernel(), ==0 after restartKernel()
-volatile int kernelRunning=0;
-
-///\internal true if a thread wakeup occurs while the kernel is paused
-volatile bool pendingWakeup=false;
-
-static bool kernelStarted=false;///<\internal becomes true after startKernel.
-
-/// This is used by disableInterrupts() and enableInterrupts() to allow nested
-/// calls to these functions.
-static unsigned char interruptDisableNesting=0;
-#ifdef WITH_SMP
-static unsigned char globalIntrNestLockHoldingCore=0xFF;
-#endif
-
-#ifdef WITH_DEEP_SLEEP
-
-///  This variable is used to keep count of how many peripherals are actually used.
-/// If it 0 then the system can enter the deep sleep state
-static int deepSleepCounter=0;
-
-#endif // WITH_DEEP_SLEEP
+bool kernelStarted=false;///<\internal becomes true after startKernel.
 
 #ifdef WITH_PROCESSES
-
 /// The proc field of the Thread class for kernel threads points to this object
 static ProcessBase *kernel=nullptr;
-
 #endif //WITH_PROCESSES
+
+//Variable shared with lock.cpp for performance and encapsulation reasons
+extern volatile int kernelRunning;
+extern unsigned char interruptDisableNesting;
+#ifdef WITH_SMP
+extern unsigned char globalIntrNestLockHoldingCore;
+#endif
 
 /**
  * \internal
@@ -143,101 +126,6 @@ void *idleThread(void *argv)
         #endif //WITH_SLEEP
     }
     return 0; //Just to avoid a compiler warning
-}
-
-void disableInterrupts()
-{
-#ifdef WITH_SMP
-    unsigned char state=globalIntrNestLockHoldingCore;
-    if(state==getCurrentCoreId())
-    {
-        if(interruptDisableNesting==0xff) errorHandler(NESTING_OVERFLOW);
-        interruptDisableNesting++;
-    } else {
-        globalInterruptDisableLock();
-        globalIntrNestLockHoldingCore=getCurrentCoreId();
-        if(interruptDisableNesting!=0) errorHandler(DISABLE_INTERRUPTS_NESTING);
-        interruptDisableNesting=1;
-    }
-#else
-    globalInterruptDisableLock();
-    if(interruptDisableNesting==0xff) errorHandler(NESTING_OVERFLOW);
-    interruptDisableNesting++;
-#endif
-}
-
-void enableInterrupts()
-{
-    if(interruptDisableNesting==0)
-    {
-        //Bad, enableInterrupts was called one time more than disableInterrupts
-        errorHandler(DISABLE_INTERRUPTS_NESTING);
-    }
-    interruptDisableNesting--;
-    if(interruptDisableNesting==0)
-    {
-    #ifdef WITH_SMP
-        globalIntrNestLockHoldingCore=0xFF;
-    #endif
-        // HACK: During startup, the C++ constructors will be invoked before
-        // the kernel is fully initialized. This process will take the
-        // interruptLock and release it, but as the kernel is still not fully
-        // up we do not want to actually disable interrupts. So only
-        // enable interrupts if the kernel is already started.
-        if(kernelStarted==true) globalInterruptEnableUnlock();
-        else IRQglobalInterruptUnlock();
-    }
-}
-
-void pauseKernel()
-{
-    int old=atomicAddExchange(&kernelRunning,1);
-    if(old>=0xff) errorHandler(NESTING_OVERFLOW);
-}
-
-void restartKernel()
-{
-    int old=atomicAddExchange(&kernelRunning,-1);
-    if(old<=0) errorHandler(PAUSE_KERNEL_NESTING);
-    
-    //Check interruptDisableNesting to allow pauseKernel() while interrupts
-    //are disabled with an InterruptDisableLock
-    if(interruptDisableNesting==0)
-    {
-        //If we missed a preemption yield immediately. This mechanism works the
-        //same way as the hardware implementation of interrupts that remain
-        //pending if they occur while interrupts are disabled.
-        //This is important to make sure context switches to a higher priority
-        //thread happen in a timely fashion.
-        //It is important that pendingWakeup is set to true any time the
-        //scheduler is called but it could not run due to the kernel being
-        //paused regardless of whether the scheduler has been called by the
-        //timer irq or any peripheral irq.
-        //With the tickless kernel, this is also important to prevent deadlocks
-        //as the idle thread is no longer periodically interrupted by timer
-        //ticks and it does pause the kernel. If the interrupt that wakes up
-        //a thread fails to call the scheduler since the idle thread paused the
-        //kernel and pendingWakeup is not set, this could cause a deadlock.
-        if(old==1 && pendingWakeup)
-        { 
-            pendingWakeup=false;
-            Thread::yield();
-        }
-    }
-}
-
-void deepSleepLock()
-{
-    #ifdef WITH_DEEP_SLEEP
-    atomicAdd(&deepSleepCounter,1);
-    #endif // WITH_DEEP_SLEEP
-}
-
-void deepSleepUnlock()
-{
-    #ifdef WITH_DEEP_SLEEP
-    atomicAdd(&deepSleepCounter,-1);
-    #endif // WITH_DEEP_SLEEP
 }
 
 void startKernel()
