@@ -34,29 +34,4 @@ namespace miosix {
 void IRQhwSpinlockAcquire(unsigned char i) noexcept;
 void IRQhwSpinlockRelease(unsigned char i) noexcept;
 
-template <unsigned char Id>
-class FastHwSpinlock
-{
-public:
-    FastHwSpinlock()
-    {
-        oldInterruptsDisabled=__get_PRIMASK();
-        __disable_irq();
-        IRQhwSpinlockAcquire(Id);
-    }
-
-    ~FastHwSpinlock()
-    {
-        IRQhwSpinlockRelease(Id);
-        if(!oldInterruptsDisabled) __enable_irq();
-    }
-
-private:
-    bool oldInterruptsDisabled;
-
-    //Unwanted methods
-    FastHwSpinlock(const FastHwSpinlock& l);
-    FastHwSpinlock& operator= (const FastHwSpinlock& l);
-};
-
 }

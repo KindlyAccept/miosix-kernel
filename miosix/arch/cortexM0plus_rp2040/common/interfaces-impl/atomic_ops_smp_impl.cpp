@@ -31,6 +31,31 @@
 
 namespace miosix {
 
+template <unsigned char Id>
+class FastHwSpinlock
+{
+public:
+    FastHwSpinlock()
+    {
+        oldInterruptsDisabled=__get_PRIMASK();
+        __disable_irq();
+        IRQhwSpinlockAcquire(Id);
+    }
+
+    ~FastHwSpinlock()
+    {
+        IRQhwSpinlockRelease(Id);
+        if(!oldInterruptsDisabled) __enable_irq();
+    }
+
+private:
+    bool oldInterruptsDisabled;
+
+    //Unwanted methods
+    FastHwSpinlock(const FastHwSpinlock& l);
+    FastHwSpinlock& operator= (const FastHwSpinlock& l);
+};
+
 using AtomicsLock = FastHwSpinlock<RP2040HwSpinlocks::Atomics>;
 
 int _atomicSwapImpl(volatile int *p, int v)
