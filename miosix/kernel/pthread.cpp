@@ -244,14 +244,14 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
 
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     IRQdoMutexLock(mutex,dLock);
     return 0;
 }
 
 int pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     void *p=reinterpret_cast<void*>(Thread::IRQgetCurrentThread());
     if(mutex->owner==0)
     {
@@ -268,7 +268,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex)
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
 //    Safety check removed for speed reasons
 //    if(mutex->owner!=reinterpret_cast<void*>(Thread::IRQgetCurrentThread()))
 //        return 0;
@@ -353,7 +353,7 @@ int pthread_once(pthread_once_t *once, void (*func)())
     bool again;
     do {
         {
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             switch(once->init_executed)
             {
                 case 0: //We're the first ones (or previous call has thrown)

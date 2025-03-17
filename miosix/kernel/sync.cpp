@@ -370,7 +370,7 @@ void ConditionVariable::wait(Mutex& m)
 void ConditionVariable::wait(pthread_mutex_t *m)
 {
     WaitToken listItem(Thread::getCurrentThread());
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     unsigned int depth=IRQdoMutexUnlockAllDepthLevels(m);
     condList.push_back(&listItem); //Putting this thread last on the list (lifo policy)
     Thread::IRQenableIrqAndWait(dLock);
@@ -393,7 +393,7 @@ TimedWaitResult ConditionVariable::timedWait(Mutex& m, long long absTime)
 TimedWaitResult ConditionVariable::timedWait(pthread_mutex_t *m, long long absTime)
 {
     WaitToken listItem(Thread::getCurrentThread());
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     unsigned int depth=IRQdoMutexUnlockAllDepthLevels(m);
     condList.push_back(&listItem); //Putting this thread last on the list (lifo policy)
     auto result=Thread::IRQenableIrqAndTimedWait(dLock,absTime);
@@ -405,7 +405,7 @@ TimedWaitResult ConditionVariable::timedWait(pthread_mutex_t *m, long long absTi
 void ConditionVariable::signal()
 {
     // We could just pause the kernel but it's faster to disable interrupts
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     if(condList.empty()) return;
     Thread *t=condList.front()->thread;
     condList.pop_front();
@@ -485,7 +485,7 @@ void Semaphore::IRQsignal()
 void Semaphore::signal()
 {
     //Global interrupt lock because Semaphore is IRQ-safe
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     //Update the state of the FIFO and the counter
     IRQsignalImpl();
 }
@@ -493,7 +493,7 @@ void Semaphore::signal()
 void Semaphore::wait()
 {
     //Global interrupt lock because Semaphore is IRQ-safe
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     //If the counter is positive, decrement it and we're done
     if(count>0)
     {
@@ -510,7 +510,7 @@ void Semaphore::wait()
 TimedWaitResult Semaphore::timedWait(long long absTime)
 {
     //Global interrupt lock because Semaphore is IRQ-safe
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     //If the counter is positive, decrement it and we're done
     if(count>0)
     {

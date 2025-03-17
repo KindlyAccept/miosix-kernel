@@ -277,10 +277,10 @@ public:
      * piece of code where interrupts are disbled, interrupts will be enabled
      * during the waiting period, and disabled back before this method returns.
      *
-     * \param dLock the InterruptDisableLock object that was used to disable
+     * \param dLock the GlobalIrqLock object that was used to disable
      * interrupts in the current context.
      */
-    static void IRQenableIrqAndWait(InterruptDisableLock& dLock)
+    static void IRQenableIrqAndWait(GlobalIrqLock& dLock)
     {
         (void)dLock; //Common implementation doesn't need it
         return IRQenableIrqAndWaitImpl();
@@ -295,10 +295,10 @@ public:
      * piece of code where interrupts are disbled, interrupts will be enabled
      * during the waiting period, and disabled back before this method returns.
      *
-     * \param dLock the FastInterruptDisableLock object that was used to disable
+     * \param dLock the FastGlobalIrqLock object that was used to disable
      * interrupts in the current context.
      */
-    static void IRQenableIrqAndWait(FastInterruptDisableLock& dLock)
+    static void IRQenableIrqAndWait(FastGlobalIrqLock& dLock)
     {
         (void)dLock; //Common implementation doesn't need it
         return IRQenableIrqAndWaitImpl();
@@ -316,7 +316,7 @@ public:
      */
     static TimedWaitResult timedWait(long long absoluteTimeNs)
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         return IRQenableIrqAndTimedWaitImpl(absoluteTimeNs);
     }
 
@@ -351,12 +351,12 @@ public:
      * piece of code where interrupts are disbled, interrupts will be enabled
      * during the waiting period, and disabled back before this method returns.
      *
-     * \param dLock the InterruptDisableLock object that was used to disable
+     * \param dLock the GlobalIrqLock object that was used to disable
      * interrupts in the current context.
      * \param absoluteTimeoutNs absolute time after which the wait times out
      * \return TimedWaitResult::Timeout if the wait timed out
      */
-    static TimedWaitResult IRQenableIrqAndTimedWait(InterruptDisableLock& dLock,
+    static TimedWaitResult IRQenableIrqAndTimedWait(GlobalIrqLock& dLock,
             long long absoluteTimeNs)
     {
         (void)dLock; //Common implementation doesn't need it
@@ -374,12 +374,12 @@ public:
      * piece of code where interrupts are disbled, interrupts will be enabled
      * during the waiting period, and disabled back before this method returns.
      *
-     * \param dLock the FastInterruptDisableLock object that was used to disable
+     * \param dLock the FastGlobalIrqLock object that was used to disable
      * interrupts in the current context.
      * \param absoluteTimeoutNs absolute time after which the wait times out
      * \return TimedWaitResult::Timeout if the wait timed out
      */
-    static TimedWaitResult IRQenableIrqAndTimedWait(FastInterruptDisableLock& dLock,
+    static TimedWaitResult IRQenableIrqAndTimedWait(FastGlobalIrqLock& dLock,
             long long absoluteTimeNs)
     {
         (void)dLock; //Common implementation doesn't need it
@@ -395,7 +395,7 @@ public:
     void wakeup()
     {
         //pausing the kernel is not enough because of IRQwait and IRQwakeup
-        FastInterruptDisableLock lock;
+        FastGlobalIrqLock lock;
         IRQwakeup();
     }
 

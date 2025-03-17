@@ -41,10 +41,9 @@ namespace miosix {
  * \internal
  * Implementation code to lock a mutex. Must be called with interrupts disabled
  * \param mutex mutex to be locked
- * \param d The instance of FastInterruptDisableLock used to disable interrupts
+ * \param d The instance of FastGlobalIrqLock used to disable interrupts
  */
-static inline void IRQdoMutexLock(pthread_mutex_t *mutex,
-        FastInterruptDisableLock& d)
+static inline void IRQdoMutexLock(pthread_mutex_t *mutex, FastGlobalIrqLock& d)
 {
     void *p=reinterpret_cast<void*>(Thread::IRQgetCurrentThread());
     if(mutex->owner==nullptr)
@@ -87,13 +86,13 @@ static inline void IRQdoMutexLock(pthread_mutex_t *mutex,
  * Must be called with interrupts disabled. If the mutex is not recursive the
  * mutex is locked only one level deep regardless of the depth value.
  * \param mutex mutex to be locked
- * \param d The instance of FastInterruptDisableLock used to disable interrupts
+ * \param d The instance of FastGlobalIrqLock used to disable interrupts
  * \param depth recursive depth at which the mutex will be locked. Zero
  * means the mutex is locked one level deep (as if lock() was called once),
  * one means two levels deep, etc. 
  */
 static inline void IRQdoMutexLockToDepth(pthread_mutex_t *mutex,
-        FastInterruptDisableLock& d, unsigned int depth)
+        FastGlobalIrqLock& d, unsigned int depth)
 {
     void *p=reinterpret_cast<void*>(Thread::IRQgetCurrentThread());
     if(mutex->owner==nullptr)

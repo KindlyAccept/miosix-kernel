@@ -134,10 +134,10 @@ public:
      * Being a blocking call, it cannot be called inside an IRQ, it can only be
      * called when interrupts are disabled.
      * \param elem element to add to the queue
-     * \param dLock the FastInterruptDisableLock object that was used to disable
+     * \param dLock the FastGlobalIrqLock object that was used to disable
      * interrupts in the current context.
      */
-    void IRQputBlocking(const T& elem, FastInterruptDisableLock& dLock);
+    void IRQputBlocking(const T& elem, FastGlobalIrqLock& dLock);
 
     /**
      * Put an element to the queue, only if the queue is not full.<br>
@@ -181,10 +181,10 @@ public:
      * Being a blocking call, it cannot be called inside an IRQ, it can only be
      * called when interrupts are disabled.
      * \param elem an element from the queue
-     * \param dLock the FastInterruptDisableLock object that was used to disable
+     * \param dLock the FastGlobalIrqLock object that was used to disable
      * interrupts in the current context.
      */
-    void IRQgetBlocking(T& elem, FastInterruptDisableLock& dLock);
+    void IRQgetBlocking(T& elem, FastGlobalIrqLock& dLock);
 
     /**
      * Get an element from the queue, only if the queue is not empty.<br>
@@ -213,7 +213,7 @@ public:
      */
     void reset()
     {
-        FastInterruptDisableLock lock;
+        FastGlobalIrqLock lock;
         IRQreset();
     }
     
@@ -272,7 +272,7 @@ private:
 template <typename T, typename BufferT>
 void QueueBase<T,BufferT>::put(const T& elem)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     while(IRQput(elem)==false)
     {
         waiting=Thread::IRQgetCurrentThread();
@@ -281,7 +281,7 @@ void QueueBase<T,BufferT>::put(const T& elem)
 }
 
 template <typename T, typename BufferT>
-void QueueBase<T,BufferT>::IRQputBlocking(const T& elem, FastInterruptDisableLock& dLock)
+void QueueBase<T,BufferT>::IRQputBlocking(const T& elem, FastGlobalIrqLock& dLock)
 {
     while(IRQput(elem)==false)
     {
@@ -293,7 +293,7 @@ void QueueBase<T,BufferT>::IRQputBlocking(const T& elem, FastInterruptDisableLoc
 template <typename T, typename BufferT>
 void QueueBase<T,BufferT>::get(T& elem)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     while(IRQget(elem)==false)
     {
         waiting=Thread::IRQgetCurrentThread();
@@ -302,7 +302,7 @@ void QueueBase<T,BufferT>::get(T& elem)
 }
 
 template <typename T, typename BufferT>
-void QueueBase<T,BufferT>::IRQgetBlocking(T& elem, FastInterruptDisableLock& dLock)
+void QueueBase<T,BufferT>::IRQgetBlocking(T& elem, FastGlobalIrqLock& dLock)
 {
     while(IRQget(elem)==false)
     {
@@ -368,7 +368,7 @@ void QueueBase<T,BufferT>::IRQreset()
  * where a thread tries to access a deleted queue.
  *
  * \warning the type T most not have a copy constructor or operator= that
- * allocate memory, as allocating memory in FastInterruptDisableLock context
+ * allocate memory, as allocating memory in FastGlobalIrqLock context
  * and within interrupt handlers is not possible.
  *
  * \tparam T the type of elements in the queue
@@ -388,7 +388,7 @@ using Queue = internal::QueueBase<T,internal::StaticQueueBuffer<T,len>>;
  * where a thread tries to access a deleted queue.
  *
  * \warning the type T most not have a copy constructor or operator= that
- * allocate memory, as allocating memory in FastInterruptDisableLock context
+ * allocate memory, as allocating memory in FastGlobalIrqLock context
  * and within interrupt handlers is not possible.
  *
  * \tparam T the type of elements in the queue

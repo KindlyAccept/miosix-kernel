@@ -540,7 +540,7 @@ static void test_3()
     CHECK_AVAIL_HEAP(EST_THREAD_HEAP_USAGE(STACK_SMALL)*3);
     long long delta;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         auto start=IRQgetTime();
         delayUs(MAX_TIME_IRQ_DISABLED);
         delta=IRQgetTime()-start;
@@ -598,7 +598,7 @@ static void test_3()
         
     const int period=10000000;//10ms
     {
-        InterruptDisableLock lock; //Making these two operations atomic.
+        GlobalIrqLock lock; //Making these two operations atomic.
         time=IRQgetTime();
         time+=period;
     }
@@ -618,10 +618,10 @@ static void test_3()
 //
 /*
 tests:
-disableInterrupts
-enableInterrupts
-fastDisableInterrupts
-fastEnableInterrupts
+globalIrqLock
+globalIrqUnlock
+fastGlobalIrqLock
+fastGlobalIrqUnlock
 Thread::getPriority
 Thread::setPriority
 Thread::IRQgetCurrentThread
@@ -662,14 +662,14 @@ static void t4_p2(void *argv)
 
 static void test_4()
 {
-    test_name("disableInterrupts and priority");
+    test_name("globalIrqLock and priority");
     Thread *p=Thread::create(t4_p1,STACK_SMALL,0,NULL);
     //Check getPriority()
     if(p->getPriority()!=0) fail("getPriority (0)");
     //Check that getCurrentThread() and IRQgetCurrentThread() return the
     //same value
     Thread *q=Thread::getCurrentThread();
-    disableInterrupts();//
+    globalIrqLock();//
     if(q!=Thread::IRQgetCurrentThread()) fail("IRQgetCurrentThread");
     //Check IRQgetPriority
     if(p->IRQgetPriority()!=0) fail("IRQgetPriority");
@@ -678,10 +678,10 @@ static void test_4()
     delayUs(MAX_TIME_IRQ_DISABLED);
     if(t4_v1)
     {
-        enableInterrupts();//
-        fail("disableInterrupts");
+        globalIrqUnlock();//
+        fail("globalIrqLock");
     }
-    enableInterrupts();//
+    globalIrqUnlock();//
     #ifndef SCHED_TYPE_EDF
     Thread::yield();
     #else //SCHED_TYPE_EDF
@@ -690,16 +690,16 @@ static void test_4()
     //Should not happen, since already tested
     if(t4_v1==false) fail("variable not updated");
 
-    fastDisableInterrupts();//
+    fastGlobalIrqLock();//
     //Check that t4_v1 is not updated
     t4_v1=false;
     delayUs(MAX_TIME_IRQ_DISABLED);
     if(t4_v1)
     {
-        fastEnableInterrupts();//
-        fail("disableInterrupts");
+        fastGlobalIrqUnlock();//
+        fail("globalIrqLock");
     }
-    fastEnableInterrupts();//
+    fastGlobalIrqUnlock();//
     #ifndef SCHED_TYPE_EDF
     Thread::yield();
     #else //SCHED_TYPE_EDF
@@ -769,9 +769,9 @@ static void t5_p1(void *argv)
         t5_v1=true;
         if(t5_v2) Thread::wait();
         else {
-            disableInterrupts();
+            globalIrqLock();
             Thread::IRQwait();
-            enableInterrupts();
+            globalIrqUnlock();
             Thread::yield();
         }
     }
@@ -807,10 +807,10 @@ static void test_5()
         Thread::sleep(100);
         if(t5_v1==true) fail("Thread::IRQwait");
     }
-    disableInterrupts();
+    globalIrqLock();
     p->IRQwakeup();
     t5_v1=false;
-    enableInterrupts();
+    globalIrqUnlock();
     //Now that is still running, must update the variable
     Thread::sleep(5);
     if(t5_v1==false) fail("Thread::IRQwakeup");
@@ -1474,7 +1474,7 @@ static void test_8()
     write='A';
     read='A';
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         for(j=0;j<8;j++)
         {
             t8_q1.IRQputBlocking(write,dLock);
@@ -1495,7 +1495,7 @@ static void test_8()
     read='A';
     for(j=0;j<8;j++)
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         t8_q1.IRQput(write);
         write++;
         if(t8_q2.isEmpty()==false) fail("Unexpected");
@@ -1563,52 +1563,52 @@ static void test_9()
     }
     restartKernel();//1
     if(isKernelRunning()==false) fail("isKernelRunning() (5)");
-    //Testing nesting of disableInterrupts()
+    //Testing nesting of globalIrqLock()
     if(areInterruptsEnabled()==false) fail("areInterruptsEnabled() (1)");
-    disableInterrupts();//Now interrupts should be disabled
+    globalIrqLock();//Now interrupts should be disabled
     t9_v1=false;
     delayUs(MAX_TIME_IRQ_DISABLED/3);
     if(t9_v1)
     {
-        enableInterrupts();
-        fail("disableInterrups() nesting (1)");
+        globalIrqUnlock();
+        fail("globalIrqLock() nesting (1)");
     }
     if(areInterruptsEnabled()==true)
     {
-        enableInterrupts();
+        globalIrqUnlock();
         fail("areInterruptsEnabled() (2)");
     }
-    disableInterrupts();//Interrupts already disabled
+    globalIrqLock();//Interrupts already disabled
     delayUs(MAX_TIME_IRQ_DISABLED/3);
     if(t9_v1)
     {
-        enableInterrupts();
-        enableInterrupts();
-        fail("disableInterrups() nesting (2)");
+        globalIrqUnlock();
+        globalIrqUnlock();
+        fail("globalIrqLock() nesting (2)");
     }
     if(areInterruptsEnabled()==true)
     {
-        enableInterrupts();
-        enableInterrupts();
+        globalIrqUnlock();
+        globalIrqUnlock();
         fail("areInterruptsEnabled() (3)");
     }
-    enableInterrupts();//Now interrupts should remain disabled
+    globalIrqUnlock();//Now interrupts should remain disabled
     delayUs(MAX_TIME_IRQ_DISABLED/3);
     if(t9_v1)
     {
-        enableInterrupts();
-        fail("enableInterrupts() nesting (1)");
+        globalIrqUnlock();
+        fail("globalIrqUnlock() nesting (1)");
     }
     if(areInterruptsEnabled()==true)
     {
-        enableInterrupts();
+        globalIrqUnlock();
         fail("areInterruptsEnabled() (4)");
     }
-    enableInterrupts();//Now interrupts should be enabled
+    globalIrqUnlock();//Now interrupts should be enabled
     delayMs(10);
     if(t9_v1==false)
     {
-        fail("enableInterrupts() nesting (2)");
+        fail("globalIrqUnlock() nesting (2)");
     }
     if(areInterruptsEnabled()==false) fail("areInterruptsEnabled() (5)");
     p->terminate();
@@ -2533,12 +2533,12 @@ static const char b2c[]="b2c----x";
 static const char b3c[]="b3c----xx";
 static const char b4c[]="";
 
-static char *IRQgbw(FastInterruptDisableLock& dLock)
+static char *IRQgbw(FastGlobalIrqLock& dLock)
 {
     char *buffer=0;
     if(bq.tryGetWritableBuffer(buffer)==false)
     {
-        FastInterruptEnableLock eLock(dLock);
+        FastGlobalIrqUnlock eLock(dLock);
         fail("BufferQueue::get");
     }
     return buffer;
@@ -2546,12 +2546,12 @@ static char *IRQgbw(FastInterruptDisableLock& dLock)
 
 static void gbr(const char *&buffer, unsigned int& size)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     while(bq.tryGetReadableBuffer(buffer,size)==false)
     {
         Thread::IRQwait();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::yield();
         }
     }
@@ -2559,7 +2559,7 @@ static void gbr(const char *&buffer, unsigned int& size)
 
 static void be()
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     bq.bufferEmptied();
 }
 
@@ -2567,13 +2567,13 @@ static void t19_p1(void *argv)
 {
     Thread::sleep(50);
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         char *buffer=IRQgbw(dLock);
         strcpy(buffer,b1c);
         bq.bufferFilled(strlen(b1c));
         t19_v1->IRQwakeup();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::sleep(10);
         }
         buffer=IRQgbw(dLock);
@@ -2581,7 +2581,7 @@ static void t19_p1(void *argv)
         bq.bufferFilled(strlen(b2c));
         t19_v1->IRQwakeup();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::sleep(10);
         }
         buffer=IRQgbw(dLock);
@@ -2589,7 +2589,7 @@ static void t19_p1(void *argv)
         bq.bufferFilled(strlen(b3c));
         t19_v1->IRQwakeup();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::sleep(10);
         }
         buffer=IRQgbw(dLock);
@@ -3132,12 +3132,7 @@ static void test_22()
     bool error=false;
     Thread *t2=Thread::create(t22_t2,STACK_MIN,0,0,Thread::JOINABLE);
     {
-        #if __CORTEX_M != 0x00
-        FastInterruptDisableLock dLock;
-        #else
-        //Cortex M0 does not have atomic ops, they are emulated by disabling IRQ
-        InterruptDisableLock dLock;
-        #endif
+        FastGlobalIrqLock dLock;
         t22_v5=false;
 
         int x=10;
@@ -4065,7 +4060,7 @@ void dmaMemcpy(void *dest, const void *source, int size,
                void *slackAfterDest, void *slackAfterSource, int slackAfterSize
 )
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     DMA2_Stream0->NDTR=size;
     DMA2_Stream0->PAR=reinterpret_cast<unsigned int>(source);
     DMA2_Stream0->M0AR=reinterpret_cast<unsigned int>(dest);
@@ -4082,7 +4077,7 @@ void dmaMemcpy(void *dest, const void *source, int size,
     if(slackAfterSize) memcpy(slackAfterDest,slackAfterSource,slackAfterSize);
     waiting=Thread::IRQgetCurrentThread();
     do {
-        FastInterruptEnableLock eLock(dLock);
+        FastGlobalIrqUnlock eLock(dLock);
         Thread::yield();
     } while(waiting);
 }
@@ -4151,7 +4146,7 @@ void testCacheAndDMA()
 {
     test_name("STM32 cache/DMA");
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
         RCC_SYNC();
         IRQregisterIrq(DMA2_Stream0_IRQn,dma2s0irq);
@@ -4199,7 +4194,7 @@ void testCacheAndDMA()
     }
 
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         IRQunregisterIrq(DMA2_Stream0_IRQn,dma2s0irq);
     }
     pass();
@@ -4586,8 +4581,8 @@ static void benchmark_4()
     i=0;
     while(b4_end==false)
     {
-        disableInterrupts();
-        enableInterrupts();
+        globalIrqLock();
+        globalIrqUnlock();
         i++;
     }
     iprintf("%d disable/enable interrupts pairs per second\n",i);
@@ -4602,8 +4597,8 @@ static void benchmark_4()
     i=0;
     while(b4_end==false)
     {
-        fastDisableInterrupts();
-        fastEnableInterrupts();
+        fastGlobalIrqLock();
+        fastGlobalIrqUnlock();
         i++;
     }
     iprintf("%d fast disable/enable interrupts pairs per second\n",i);

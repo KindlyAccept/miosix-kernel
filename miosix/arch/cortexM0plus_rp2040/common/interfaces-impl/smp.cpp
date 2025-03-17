@@ -71,7 +71,7 @@ static unsigned long fifoReceive()
 
 void IRQinterProcessorInterruptHandler()
 {
-    IRQGlobalInterruptLock lock;
+    FastGlobalLockFromIrq dLock;
     unsigned long fifoState=sio_hw->fifo_st;
     if(fifoState & (SIO_FIFO_ST_ROE_BITS|SIO_FIFO_ST_WOF_BITS))
     {

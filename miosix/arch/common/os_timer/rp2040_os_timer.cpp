@@ -75,7 +75,7 @@ static void IRQtimerInterruptHandler()
 
 long long getTime() noexcept
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return tc.tick2ns(IRQgetTicks());
 }
 

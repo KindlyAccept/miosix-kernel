@@ -38,7 +38,7 @@ void errorHandler(Error e)
     // interrupt routine, and disabling interrupts within an interrupt
     // routine must be avoided.
     bool interrupts=areInterruptsEnabled();
-    if(interrupts) disableInterrupts();
+    if(interrupts) fastIrqLock(); //FIXME: think about what happens in the multi-core case
 
     //Recoverable errors: None
     

@@ -119,7 +119,7 @@ void RP2040PL011Serial::IRQwrite(const char *str)
     // We can reach here also with only kernel paused, so make sure
     // interrupts are disabled.
     bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastDisableInterrupts();
+    if(interrupts) fastGlobalIrqLock(); //FIXME: doesn't seem to work with multi-core
     // Write to the data register directly
     for(int i=0; str[i] != '\0'; i++)
     {
@@ -131,7 +131,7 @@ void RP2040PL011Serial::IRQwrite(const char *str)
     // We might be tempted to clear the TX interrupt status, but we shouldn't
     // do this as there might be another thread writing to the UART which needs
     // that interrupt to be signalled anyway.
-    if(interrupts) fastEnableInterrupts();
+    if(interrupts) fastGlobalIrqUnlock();
 }
 
 int RP2040PL011Serial::ioctl(int cmd, void *arg)

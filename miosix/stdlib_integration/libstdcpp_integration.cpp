@@ -250,7 +250,7 @@ namespace __cxxabiv1
  */
 extern "C" int __cxa_guard_acquire(__guard *g)
 {
-    miosix::InterruptDisableLock dLock;
+    miosix::GlobalIrqLock dLock;
     volatile MiosixGuard *guard=reinterpret_cast<volatile MiosixGuard*>(g);
     for(;;)
     {
@@ -282,7 +282,7 @@ extern "C" int __cxa_guard_acquire(__guard *g)
         }
 
         {
-            miosix::InterruptEnableLock eLock(dLock);
+            miosix::GlobalIrqUnlock eLock(dLock);
             miosix::Thread::yield(); //Sort of a spinlock, a "yieldlock"...
         }
     }
@@ -294,7 +294,7 @@ extern "C" int __cxa_guard_acquire(__guard *g)
  */
 extern "C" void __cxa_guard_release(__guard *g) noexcept
 {
-    miosix::InterruptDisableLock dLock;
+    miosix::GlobalIrqLock dLock;
     MiosixGuard *guard=reinterpret_cast<MiosixGuard*>(g);
     guard->flag=1;
 }
@@ -305,7 +305,7 @@ extern "C" void __cxa_guard_release(__guard *g) noexcept
  */
 extern "C" void __cxa_guard_abort(__guard *g) noexcept
 {
-    miosix::InterruptDisableLock dLock;
+    miosix::GlobalIrqLock dLock;
     MiosixGuard *guard=reinterpret_cast<MiosixGuard*>(g);
     guard->flag=0;
 }
@@ -320,13 +320,13 @@ extern "C" void __cxa_guard_abort(__guard *g) noexcept
 
 extern "C" unsigned int libat_quick_lock_n(void *ptr)
 {
-    miosix::disableInterrupts();
+    miosix::globalIrqLock();
     return 0;
 }
 
 extern "C" void libat_quick_unlock_n(void *ptr, unsigned int token)
 {
-    miosix::enableInterrupts();
+    miosix::globalIrqUnlock();
 }
 
 // These are to implement "heavy" atomic operations, which are not used in

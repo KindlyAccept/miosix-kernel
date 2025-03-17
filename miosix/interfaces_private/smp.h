@@ -28,7 +28,7 @@
 #pragma once
 
 #include "config/miosix_settings.h"
-#include "interfaces/interrupts.h"
+#include "kernel/lock.h"
 
 #ifndef COMPILING_MIOSIX
 #error "This is header is private, it can't be used outside Miosix itself."
@@ -90,7 +90,7 @@ void IRQcallOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept;
  */
 inline void callOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept
 {
-    GlobalInterruptLock lock;
+    GlobalIrqLock dLock;
     IRQcallOnCore(core,f,arg);
 }
 

@@ -290,21 +290,21 @@ void IRQunregisterIrq(unsigned int id, void (*handler)(void*), void *arg) noexce
 void registerIrq(unsigned int id, void (*handler)(void*), void *arg) noexcept
 {
     //TODO pin ourselves to core 0 before registering IRQ
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     IRQregisterIrq(id,handler,arg);
 }
 
 bool isIrqRegistered(unsigned int id, void (*handler)(void*), void *arg) noexcept
 {
     //TODO pin ourselves to core 0 before registering IRQ
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     return IRQisIrqRegistered(id,handler,arg);
 }
 
 void unregisterIrq(unsigned int id, void (*handler)(void*), void *arg) noexcept
 {
     //TODO pin ourselves to core 0 before registering IRQ
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     IRQunregisterIrq(id,handler,arg);
 }
 

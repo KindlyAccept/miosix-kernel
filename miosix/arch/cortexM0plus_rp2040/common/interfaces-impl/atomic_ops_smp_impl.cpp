@@ -84,7 +84,7 @@ void *atomicFetchAndIncrementImpl(void * const volatile * p, int offset, int inc
         AtomicsLock lock;
         result = *p;
         if(result == 0) return 0;
-        volatile uint32_t *pt = reinterpret_cast<uint32_t*>(result) + offset;
+        auto pt = reinterpret_cast<volatile unsigned int*>(result) + offset;
         *pt += incr;
     }
     asm volatile("":::"memory");

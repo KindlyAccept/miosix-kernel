@@ -168,7 +168,7 @@ protected:
      */
     unsigned int sizeImpl() const
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         return n;
     }
 
@@ -193,9 +193,9 @@ template<unsigned SlotSize>
 void FixedEventQueueBase<SlotSize>::postImpl(Callback<SlotSize>& event,
         Callback<SlotSize> *events, unsigned int size)
 {
-    //Not FastInterruptDisableLock as the operator= of the bound
+    //Not FastGlobalIrqLock as the operator= of the bound
     //parameters of the Callback may allocate
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     while(IRQpostImpl(event,events,size)==false)
     {
         WaitToken w(Thread::IRQgetCurrentThread());
@@ -229,9 +229,9 @@ template<unsigned SlotSize>
 void FixedEventQueueBase<SlotSize>::runImpl(Callback<SlotSize> *events,
         unsigned int size)
 {
-    //Not FastInterruptDisableLock as the operator= of the bound
+    //Not FastGlobalIrqLock as the operator= of the bound
     //parameters of the Callback may allocate
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     for(;;)
     {
         while(n<=0)
@@ -251,7 +251,7 @@ void FixedEventQueueBase<SlotSize>::runImpl(Callback<SlotSize> *events,
             waitingPut.pop_front();
         }
         {
-            InterruptEnableLock eLock(dLock);
+            GlobalIrqUnlock eLock(dLock);
             f();
         }
     }
@@ -263,9 +263,9 @@ void FixedEventQueueBase<SlotSize>::runOneImpl(Callback<SlotSize> *events,
 {
     Callback<SlotSize> f;
     {
-        //Not FastInterruptDisableLock as the operator= of the bound
+        //Not FastGlobalIrqLock as the operator= of the bound
         //parameters of the Callback may allocate
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         if(n<=0) return;
         f=events[get]; //This may allocate memory
         if(++get>=size) get=0;
@@ -317,7 +317,7 @@ public:
      * run() or runOne(). Bind can be used to bind parameters to the function.
      * Unlike with the EventQueue, the operator= of the bound parameters have
      * the restriction that they need to be callable from inside a
-     * InterruptDisableLock without causing undefined behaviour, so they
+     * GlobalIrqLock without causing undefined behaviour, so they
      * must not, open files, print, ... but can allocate memory.
      */
     void post(Callback<SlotSize> event)
@@ -332,13 +332,13 @@ public:
      * run() or runOne(). Bind can be used to bind parameters to the function.
      * Unlike with the EventQueue, the operator= of the bound parameters have
      * the restriction that they need to be callable from inside a
-     * InterruptDisableLock without causing undefined behaviour, so they
+     * GlobalIrqLock without causing undefined behaviour, so they
      * must not open files, print, ... but can allocate memory.
      * \return false if there was no space in the queue
      */
     bool postNonBlocking(Callback<SlotSize> event)
     {
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         return this->IRQpostImpl(event,events,NumSlots);
     }
 
@@ -353,7 +353,7 @@ public:
      * the restriction that they need to be callable with interrupts disabled
      * so they must not open files, print, ...
      * 
-     * \warning If the call is made from within an InterruptDisableLock the copy
+     * \warning If the call is made from within an GlobalIrqLock the copy
      * constructors can allocate memory, while if the call is made from an
      * interrupt handler or a FastInterruptFisableLock memory allocation is
      * forbidden.
@@ -375,7 +375,7 @@ public:
      * the restriction that they need to be callable with interrupts disabled
      * so they must not open files, print, ...
      * 
-     * \warning If the call is made from within an InterruptDisableLock the copy
+     * \warning If the call is made from within an GlobalIrqLock the copy
      * constructors can allocate memory, while if the call is made from an
      * interrupt handler or a FastInterruptFisableLock memory allocation is
      * forbidden.

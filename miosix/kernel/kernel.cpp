@@ -104,7 +104,7 @@ void *idleThread(void *argv)
         #ifdef WITH_SLEEP
         #ifdef WITH_DEEP_SLEEP
         {
-            FastInterruptDisableLock lock;
+            FastGlobalIrqLock lock;
             bool sleep;
             if(deepSleepCounter==0)
             {
@@ -297,12 +297,12 @@ void Thread::nanoSleepUntil(long long absoluteTimeNs)
     //pauseKernel() here is not enough since even if the kernel is stopped
     //the timer isr will wake threads, modifying the sleepingList
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         SleepData d(const_cast<Thread*>(runningThread),absoluteTimeNs);
         d.thread->flags.IRQsetSleep(); //Sleeping thread: set sleep flag
         IRQaddToSleepingList(&d);
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::yield();
         }
         //Only required for interruptibility when terminate is called
@@ -314,7 +314,7 @@ void Thread::wait()
 {
     //pausing the kernel is not enough because of IRQwait and IRQwakeup
     {
-        FastInterruptDisableLock lock;
+        FastGlobalIrqLock lock;
         const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
     }
     Thread::yield();
@@ -330,7 +330,7 @@ void Thread::PKrestartKernelAndWait(PauseKernelLock& dLock)
 {
     (void)dLock;
     //Implemented by upgrading the lock to an interrupt disable one
-    FastInterruptDisableLock dLockIrq;
+    FastGlobalIrqLock dLockIrq;
     auto savedNesting=kernelRunning;
     kernelRunning=0;
     IRQenableIrqAndWaitImpl();
@@ -343,7 +343,7 @@ TimedWaitResult Thread::PKrestartKernelAndTimedWait(PauseKernelLock& dLock,
 {
     (void)dLock;
     //Implemented by upgrading the lock to an interrupt disable one
-    FastInterruptDisableLock dLockIrq;
+    FastGlobalIrqLock dLockIrq;
     auto savedNesting=kernelRunning;
     kernelRunning=0;
     auto result=IRQenableIrqAndTimedWaitImpl(absoluteTimeNs);
@@ -357,7 +357,7 @@ void Thread::PKwakeup()
     //pausing the kernel is not enough because of IRQwait and IRQwakeup
     //DO NOT refactor this code by calling IRQwakeup() as IRQwakeup can cause
     //the scheduler interrupt to be called something we should avoid doing here
-    FastInterruptDisableLock lock;
+    FastGlobalIrqLock lock;
     this->flags.IRQsetWait(false);
 }
 
@@ -440,7 +440,7 @@ void Thread::terminate()
 {
     //doing a read-modify-write operation on this->status, so pauseKernel is
     //not enough, we need to disable interrupts
-    FastInterruptDisableLock lock;
+    FastGlobalIrqLock lock;
     if(this->flags.isDeleting()) return; //Prevent sleep interruption abuse
     this->flags.IRQsetDeleting();
     this->flags.IRQclearSleepAndWait(); //Interruptibility
@@ -454,7 +454,7 @@ bool Thread::testTerminate()
 
 void Thread::detach()
 {
-    FastInterruptDisableLock lock;
+    FastGlobalIrqLock lock;
     this->flags.IRQsetDetached();
     
     //we detached a terminated thread, so its memory needs to be deallocated
@@ -482,7 +482,7 @@ bool Thread::isDetached() const
 bool Thread::join(void** result)
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         if(this==Thread::IRQgetCurrentThread()) return false;
         if(Thread::IRQexists(this)==false) return false;
         if(this->flags.isDetached()) return false;
@@ -497,7 +497,7 @@ bool Thread::join(void** result)
                 //Wait
                 Thread::IRQgetCurrentThread()->flags.IRQsetJoinWait(true);
                 {
-                    FastInterruptEnableLock eLock(dLock);
+                    FastGlobalIrqUnlock eLock(dLock);
                     Thread::yield();
                 }
                 if(Thread::IRQexists(this)==false) return false;
@@ -765,7 +765,7 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
     //Since the thread is running, it cannot be in the sleepingList, so no need
     //to remove it from the list
     {
-        FastInterruptDisableLock lock;
+        FastGlobalIrqLock lock;
         cur->flags.IRQsetDeleted();
 
         if(cur->flags.isDetached()==false)
@@ -797,9 +797,9 @@ void Thread::IRQenableIrqAndWaitImpl()
     auto savedHoldingCore=globalIntrNestLockHoldingCore;
     globalIntrNestLockHoldingCore=0xff;
     #endif
-    globalInterruptEnableUnlock();
+    fastGlobalIrqUnlock();
     Thread::yield(); //Here the wait becomes effective
-    globalInterruptDisableLock();
+    fastGlobalIrqLock();
     #ifdef WITH_SMP
     if(globalIntrNestLockHoldingCore!=0xff) errorHandler(UNEXPECTED);
     globalIntrNestLockHoldingCore=savedHoldingCore;
@@ -821,9 +821,9 @@ TimedWaitResult Thread::IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs)
     auto savedHoldingCore=globalIntrNestLockHoldingCore;
     globalIntrNestLockHoldingCore=0xff;
     #endif
-    globalInterruptEnableUnlock();
+    fastGlobalIrqUnlock();
     Thread::yield(); //Here the wait becomes effective
-    globalInterruptDisableLock();
+    fastGlobalIrqLock();
     #ifdef WITH_SMP
     if(globalIntrNestLockHoldingCore!=0xff) errorHandler(UNEXPECTED);
     globalIntrNestLockHoldingCore=savedHoldingCore;

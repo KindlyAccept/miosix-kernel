@@ -596,7 +596,7 @@ public:
     bool tryWait()
     {
         // Global interrupt lock because Semaphore is IRQ-safe
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         return IRQtryWait();
     }
 
@@ -619,7 +619,7 @@ public:
     int reset()
     {
         // Global interrupt lock because Semaphore is IRQ-safe
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         return IRQreset();
     }
 
