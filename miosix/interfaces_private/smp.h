@@ -90,7 +90,7 @@ void IRQcallOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept;
  */
 inline void callOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept
 {
-    GlobalIrqLock dLock;
+    FastGlobalIrqLock dLock;
     IRQcallOnCore(core,f,arg);
 }
 
