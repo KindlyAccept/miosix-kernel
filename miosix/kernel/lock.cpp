@@ -35,7 +35,7 @@ namespace miosix {
 ///\internal !=0 after pauseKernel(), ==0 after restartKernel()
 volatile int kernelRunning=0;
 
-/// This is used by disableInterrupts() and enableInterrupts() to allow nested
+/// This is used by globalIrqLock() and globalIrqUnlock() to allow nested
 /// calls to these functions.
 unsigned char interruptDisableNesting=0;
 
@@ -80,8 +80,8 @@ void globalIrqUnlock() noexcept
 {
     if(interruptDisableNesting==0)
     {
-        //Bad, enableInterrupts was called one time more than disableInterrupts
-        errorHandler(DISABLE_INTERRUPTS_NESTING);
+        //Bad, globalIrqUnlock was called one time more than globalIrqLock
+        errorHandler(GLOBAL_LOCK_NESTING);
     }
     interruptDisableNesting--;
     if(interruptDisableNesting==0)
@@ -114,7 +114,7 @@ void restartKernel() noexcept
     if(old<=0) errorHandler(PAUSE_KERNEL_NESTING);
     
     //Check interruptDisableNesting to allow pauseKernel() while interrupts
-    //are disabled with an InterruptDisableLock
+    //are disabled with a GlobalIrqLock
     if(interruptDisableNesting==0)
     {
         //If we missed a preemption yield immediately. This mechanism works the

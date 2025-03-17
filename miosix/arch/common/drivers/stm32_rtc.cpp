@@ -92,7 +92,7 @@ long long IRQgetTick()
  * \param dLock used to reenable interrupts while sleeping
  * \return true if the wait time was in the past
  */
-bool IRQabsoluteWaitTick(long long tick, FastInterruptDisableLock& dLock)
+bool IRQabsoluteWaitTick(long long tick, FastGlobalIrqLock& dLock)
 {
     irqTime=tick;
     unsigned int hwAlarm=(tick & 0xffffffffULL) - (swTime & 0xffffffffULL);
@@ -113,7 +113,7 @@ bool IRQabsoluteWaitTick(long long tick, FastInterruptDisableLock& dLock)
     do {
         Thread::IRQwait();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::yield();
         }
     } while(waiting);
@@ -155,7 +155,7 @@ void absoluteDeepSleep(long long int value)
     Rtc& rtc=Rtc::instance();
     ioctl(STDOUT_FILENO,IOCTL_SYNC,0);
 
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     
     //Set alarm and enable EXTI
     long long wkupTick=rtc.tc.ns2tick(value)-wakeupAdvance;
@@ -251,7 +251,7 @@ long long Rtc::getValue() const
     //Function takes ~170 clock cycles ~60 cycles IRQgetTick, ~96 cycles tick2ns
     long long tick;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         tick=IRQgetTick();
     }
     //tick2ns is reentrant, so can be called with interrupt enabled
@@ -266,26 +266,26 @@ long long Rtc::IRQgetValue() const
 // May not work due to the way hwAlarm is computed in sleep functions
 // void Rtc::setValue(long long value)
 // {
-//     FastInterruptDisableLock dLock;
+//     FastGlobalIrqLock dLock;
 //     swTime=tc.ns2tick(value)-IRQgetHwTick();
 // }
 
 void Rtc::wait(long long value)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     IRQabsoluteWaitTick(IRQgetTick()+tc.ns2tick(value),dLock);
 }
 
 bool Rtc::absoluteWait(long long value)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return IRQabsoluteWaitTick(tc.ns2tick(value),dLock);
 }
 
 Rtc::Rtc() : tc(getTickFrequency())
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->APB1ENR |= RCC_APB1ENR_PWREN | RCC_APB1ENR_BKPEN;
         PWR->CR |= PWR_CR_DBP;
         RCC->BDCR=RCC_BDCR_RTCEN       //RTC enabled

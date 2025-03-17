@@ -358,24 +358,24 @@ long long HRTB::IRQgetCurrentTickVht(){
     return IRQgetTickCorrectedVht();
 }
 
-Thread* HRTB::IRQgpioWait(long long tick,FastInterruptDisableLock *dLock){
+Thread* HRTB::IRQgpioWait(long long tick,FastGlobalIrqLock *dLock){
     do{
         gpioWaiting=Thread::IRQgetCurrentThread();
         Thread::IRQwait();
         {
-            FastInterruptEnableLock eLock(*dLock);
+            FastGlobalIrqUnlock eLock(*dLock);
             Thread::yield();
         }
     }while(gpioWaiting && tick>IRQgetTick());
     return gpioWaiting;
 }
 
-Thread* HRTB::IRQtransceiverWait(long long tick,FastInterruptDisableLock *dLock){
+Thread* HRTB::IRQtransceiverWait(long long tick,FastGlobalIrqLock *dLock){
     do {
         transceiverWaiting=Thread::IRQgetCurrentThread();
         Thread::IRQwait();
         {
-            FastInterruptEnableLock eLock(*dLock);
+            FastGlobalIrqUnlock eLock(*dLock);
             Thread::yield();
         }
     } while(transceiverWaiting && tick>IRQgetTick());
@@ -435,17 +435,17 @@ inline void HRTB::enableCC1InterruptTim2(bool enable){
 }
 
 long long HRTB::getCurrentTick() noexcept {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return IRQgetTick();
 }
 
 long long HRTB::getCurrentTickCorrected(){
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return IRQgetTickCorrected();
 }
 
 long long HRTB::getCurrentTickVht(){
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return IRQgetTickCorrectedVht();
 }
 
@@ -650,7 +650,7 @@ WaitResult HRTB::IRQsetTransceiverTimeout(long long tick){
 
 bool HRTB::gpioAbsoluteWaitTrigger(long long tick){
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         if(isInputGPIO){
             setModeGPIOTimer(false);			//output timer 
             expansion::gpio10::mode(Mode::OUTPUT);	//output pin
@@ -667,7 +667,7 @@ bool HRTB::gpioAbsoluteWaitTrigger(long long tick){
 }
 
 bool HRTB::gpioAbsoluteWaitTimeoutOrEvent(long long tick){
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     WaitResult r=IRQsetGPIOtimeout(tick);
     
     //Important optimization that allows us to save 1.5us
@@ -709,7 +709,7 @@ void HRTB::initGPIO(){
 }
 
 bool HRTB::transceiverAbsoluteWaitTrigger(long long tick){
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     
     setModeTransceiverTimer(false);
     if(IRQsetNextTransceiverInterrupt(tick)==WaitResult::WAKEUP_IN_THE_PAST){
@@ -721,7 +721,7 @@ bool HRTB::transceiverAbsoluteWaitTrigger(long long tick){
 }
 
 bool HRTB::transceiverAbsoluteWaitTimeoutOrEvent(long long tick){
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     WaitResult r=IRQsetTransceiverTimeout(tick);
     
     setModeTransceiverTimer(true);
@@ -765,7 +765,7 @@ HRTB& HRTB::instance(){
 HRTB::HRTB() {
     //Power the timers up and PRS system
     {
-        InterruptDisableLock l;
+        GlobalIrqLock l;
         CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_TIMER1 | CMU_HFPERCLKEN0_TIMER2
                 | CMU_HFPERCLKEN0_TIMER3 | CMU_HFPERCLKEN0_PRS;
     }
@@ -828,7 +828,7 @@ HRTB::HRTB() {
     
     rtc=&Rtc::instance();
     {
-        InterruptDisableLock l;
+        GlobalIrqLock l;
         
         int nowRtc;
         long long nowHrt;

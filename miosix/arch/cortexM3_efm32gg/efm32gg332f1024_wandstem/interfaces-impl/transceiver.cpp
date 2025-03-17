@@ -733,13 +733,13 @@ void Transceiver::waitXosc()
     //but it is too energy hungry
     
     auto misoPin=internalSpi::miso::getPin();
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     waiting=Thread::IRQgetCurrentThread();
     IRQenableGpioIrq(misoPin);
     do {
         Thread::IRQwait();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::yield();
         }
     } while(waiting);

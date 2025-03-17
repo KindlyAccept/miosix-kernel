@@ -55,7 +55,7 @@ Rtc& Rtc::instance()
 //   {
 //     short int ss = 0;
 //     {
-//       FastInterruptDisableLock dlock;
+//       FastGlobalIrqLock dlock;
 //       ss = IRQgetSSR();
 //     }
 //     return ss;
@@ -65,7 +65,7 @@ Rtc& Rtc::instance()
 //   {
 //     long long int time = 0;
 //     {
-//       FastInterruptDisableLock dlock;
+//       FastGlobalIrqLock dlock;
 //       time = IRQgetTime();      
 //     }
 //     return time;
@@ -75,7 +75,7 @@ Rtc& Rtc::instance()
 //   {
 //     long long int date = 0;
 //     {
-//       FastInterruptDisableLock dlock;
+//       FastGlobalIrqLock dlock;
 //       date = IRQgetDate();
 //     }
 //     return date;
@@ -182,7 +182,7 @@ Rtc::Rtc() :
     wkp_tc(clock_freq / 2)
 {
     {
-        InterruptDisableLock dl;
+        GlobalIrqLock dl;
         RCC->APB1ENR |= RCC_APB1ENR_PWREN;
         PWR->CR |= PWR_CR_DBP;
 

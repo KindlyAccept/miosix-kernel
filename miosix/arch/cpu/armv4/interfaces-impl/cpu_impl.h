@@ -115,7 +115,6 @@
 
 /**
  * Enable interrupts (both irq and fiq)<br>
- * If you are not using FIQ you should use disableInterrupts()
  * FIQ means fast interrupts, is another level of interrupts available in the
  * ARM7 cpu. They are not used in miosix, and are available to the user.
  * The main advantage of FIQ is that they can even interrupt IRQ, so they have
@@ -139,7 +138,6 @@
                  :::"r0");
 
 ///Disable interrupts (both irq and fiq)<br>
-///If you are not using FIQ you should use enableInterrupts()
 #define disableIRQandFIQ()                                                    \
     asm volatile(".set  I_BIT, 0x80           \n\t"                           \
                  ".set  F_BIT, 0x40           \n\t"                           \

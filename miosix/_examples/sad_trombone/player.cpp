@@ -98,7 +98,7 @@ static void IRQdmaRefill()
  */
 static void dmaRefill()
 {
-	FastInterruptDisableLock dLock;
+	FastGlobalIrqLock dLock;
 	IRQdmaRefill();
 }
 
@@ -164,15 +164,8 @@ void cs43l22volume(int db)
 template<typename T>
 static void atomicTestAndWaitUntil(volatile T& variable, T value)
 {
-	FastInterruptDisableLock dLock;
-	while(variable!=value)
-	{
-		Thread::IRQgetCurrentThread()->IRQwait();
-		{
-			FastInterruptEnableLock eLock(dLock);
-			Thread::yield();
-		}
-	}
+	FastGlobalIrqLock dLock;
+	while(variable!=value) IRQenableIrqAndWait(dLock);
 }
 
 /**
@@ -181,16 +174,9 @@ static void atomicTestAndWaitUntil(volatile T& variable, T value)
  */
 static unsigned short *getWritableBuffer()
 {
-	FastInterruptDisableLock dLock;
+	FastGlobalIrqLock dLock;
 	unsigned short *result;
-	while(bq->tryGetWritableBuffer(result)==false)
-	{
-		waiting->IRQwait();
-		{
-			FastInterruptEnableLock eLock(dLock);
-			Thread::yield();
-		}
-	}
+	while(bq->tryGetWritableBuffer(result)==false) IRQenableIrqAndWait(dLock);
 	return result;
 }
 
@@ -199,7 +185,7 @@ static unsigned short *getWritableBuffer()
  */
 static void bufferFilled()
 {
-	FastInterruptDisableLock dLock;
+	FastGlobalIrqLock dLock;
 	bq->bufferFilled(bq->bufferMaxSize());
 }
 
@@ -264,7 +250,7 @@ void Player::play(Sound& sound)
     bq=new BufferQueue<unsigned short,bufferSize>();
     
 	{
-		FastInterruptDisableLock dLock;
+		FastGlobalIrqLock dLock;
         //Configure GPIOs
         dacPin::mode(Mode::INPUT_ANALOG);
 		//Enable peripherals clock gating, other threads might be concurretly
@@ -314,7 +300,7 @@ void Player::play(Sound& sound)
 
     //Shutdown
 	{
-		FastInterruptDisableLock dLock;
+		FastGlobalIrqLock dLock;
 		IRQunregisterIrq(DMA1_Channel3_IRQn,DACdmaHandlerImpl);
 		TIM6->CR1=0;
 		DMA1_Channel3->CCR=0;
@@ -331,7 +317,7 @@ void Player::play(Sound& sound)
     bq=new BufferQueue<unsigned short,bufferSize>();
 
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         //Enable DMA1 and SPI3/I2S3
         RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
         RCC_SYNC();
@@ -415,7 +401,7 @@ void Player::play(Sound& sound)
     reset::low(); //Keep in reset state
     SPI3->I2SCFGR=0;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->CR &= ~RCC_CR_PLLI2SON;
         IRQunregisterIrq(DMA1_Stream5_IRQn,I2SdmaHandlerImpl);
     }

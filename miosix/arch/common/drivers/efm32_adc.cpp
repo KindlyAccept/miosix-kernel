@@ -90,7 +90,7 @@ unsigned short Adc::readChannel(int channel)
 Adc::Adc()
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         CMU->HFPERCLKEN0 |= CMU_HFPERCLKEN0_ADC0;
     }
 

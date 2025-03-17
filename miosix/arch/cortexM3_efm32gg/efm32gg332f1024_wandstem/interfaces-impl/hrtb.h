@@ -138,8 +138,8 @@ class HRTB {
         WaitResult IRQsetGPIOtimeout(long long tick);
         WaitResult IRQsetTransceiverTimeout(long long tick);
         
-        Thread* IRQgpioWait(long long tick,FastInterruptDisableLock* dLock);
-        Thread* IRQtransceiverWait(long long tick,FastInterruptDisableLock *dLock);
+        Thread* IRQgpioWait(long long tick,FastGlobalIrqLock* dLock);
+        Thread* IRQtransceiverWait(long long tick,FastGlobalIrqLock *dLock);
         
         void initTransceiver();
         bool transceiverAbsoluteWaitTimeoutOrEvent(long long tick);

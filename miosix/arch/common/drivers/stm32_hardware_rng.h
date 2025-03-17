@@ -68,7 +68,7 @@ private:
      */
     HardwareRng() : old(0)
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
         RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
         RCC_SYNC();
     }

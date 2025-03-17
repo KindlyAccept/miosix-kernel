@@ -115,7 +115,7 @@ TU_ATTR_ALWAYS_INLINE static inline bool osal_mutex_unlock(osal_mutex_t mutex_hd
 // that will not happen as except for Miosix the embedded/RT ecosystem is
 // C-centric and the inertia is too great to overcome.
 //   Therefore we use tusb's fifo class with our own synchronization using
-// low-level Miosix APIs. We use FastInterruptDisableLock for protecting the
+// low-level Miosix APIs. We use FastGlobalIrqLock for protecting the
 // fifo because it might be changed from interrupt context.
 #include "common/tusb_fifo.h"
 
@@ -150,7 +150,7 @@ TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_receive(osal_queue_t qhdl, v
     else qhdl->itemAvailable.timedWait(miosix::getTime() + (long long)msec*1000000LL);
     bool success;
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::FastGlobalIrqLock dLock;
         success = tu_fifo_read(&qhdl->fifo, data);
     }
     return success;
@@ -165,7 +165,7 @@ TU_ATTR_ALWAYS_INLINE static inline bool osal_queue_send(osal_queue_t qhdl, void
         qhdl->itemAvailable.IRQsignal();
     } else {
         {
-            miosix::FastInterruptDisableLock dLock;
+            miosix::FastGlobalIrqLock dLock;
             success=tu_fifo_write(&qhdl->fifo,data);
         }
         qhdl->itemAvailable.signal();

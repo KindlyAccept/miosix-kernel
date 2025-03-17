@@ -35,7 +35,7 @@ namespace miosix {
  * Example code
  * \code
  * {
- *      FastInterruptDisableLock dLock;
+ *      FastGlobalIrqLock dLock;
  *      //GPIO digital logic must be disabled to use as ADC input
  *      expansion::gpio0::mode(Mode::DISABLED); //GPIO0 is PD3 or ADC0_CH3
  *      expansion::gpio1::mode(Mode::OUTPUT_HIGH);

@@ -292,14 +292,14 @@ DEFAULT_OS_TIMER_INTERFACE_IMPLEMENTATION(timer);
 // Set AST->AST_CV=0xffff0000; in timer init not to wait 72 hours till test end.
 void test()
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     long long lastgood=0;
     for(;;)
     {
         auto current=timer.IRQgetTimeTick();
         if(current>0x180000000LL)
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             iprintf("Test failed fail=0x%llx lastgood=0x%llx\n",current,lastgood);
         } else if(current==0x100001000LL) IRQerrorLog("Test end\r\n");
         lastgood=current;

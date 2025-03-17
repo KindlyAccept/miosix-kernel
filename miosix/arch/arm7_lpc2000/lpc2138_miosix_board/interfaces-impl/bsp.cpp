@@ -249,7 +249,7 @@ static void _shutdown(bool and_return, Time *t)
     delayMs(100);
 
     //Disable interrupts
-    disableInterrupts();
+    globalIrqLock();
     
     //Clearing PINSEL registers. All pin are GPIO by default
     PINSEL0=0;
@@ -342,7 +342,7 @@ static void _shutdown(bool and_return, Time *t)
     delayMs(50);
     
     //Re-enable interrupts
-    enableInterrupts();
+    globalIrqUnlock();
 
     restartKernel();
 }
@@ -378,7 +378,7 @@ void reboot()
     FilesystemManager::instance().umountAll();
     #endif //WITH_FILESYSTEM
 
-    disableInterrupts();
+    globalIrqLock();
     //Clearing PINSEL registers. All pin are GPIO by default
     PINSEL0=0;
     PINSEL1=0;

@@ -103,7 +103,7 @@ void delayUsTest()
         long long delta;
         {
             #ifndef NO_INT_DISABLE_DURING_TEST
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             #endif
             auto start=IRQgetTime();
             delayUs(i);
@@ -133,7 +133,7 @@ void delayMsTest()
         long long delta;
         {
             #ifndef NO_INT_DISABLE_DURING_TEST
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             #endif
             auto start=IRQgetTime();
             delayMs(i);

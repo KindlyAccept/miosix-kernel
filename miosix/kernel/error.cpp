@@ -58,8 +58,8 @@ void errorHandler(Error e)
         case PAUSE_KERNEL_NESTING:
             IRQerrorLog("\r\n***Pause kernel nesting\r\n");
             break;
-        case DISABLE_INTERRUPTS_NESTING:
-            IRQerrorLog("\r\n***Disable interrupt nesting\r\n");
+        case GLOBAL_LOCK_NESTING:
+            IRQerrorLog("\r\n***Global lock nesting\r\n");
             break;
         case MUTEX_DEADLOCK:
             IRQerrorLog("\r\n***Deadlock\r\n");
@@ -78,7 +78,7 @@ void errorHandler(Error e)
     }
     IRQsystemReboot();
 
-    //if(interrupts) enableInterrupts(); // Not needed since no recoverable errors
+    //if(interrupts) fastIrqUnlock(); // Not needed since no recoverable errors
 }
 
 } //namespace miosix

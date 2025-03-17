@@ -475,7 +475,7 @@ ssize_t STM32SerialBase::readFromRxQueue(void *buffer, size_t size)
     Lock<FastMutex> l(rxMutex);
     char *buf=reinterpret_cast<char*>(buffer);
     size_t result=0;
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     DeepSleepLock dpLock;
     for(;;)
     {
@@ -484,7 +484,7 @@ ssize_t STM32SerialBase::readFromRxQueue(void *buffer, size_t size)
         {
             if(rxQueue.tryGet(buf[result])==false) break;
             //This is here just not to keep IRQ disabled for the whole loop
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
         }
         if(idle && result>0) break;
         if(result==size) break;
@@ -552,7 +552,7 @@ STM32Serial::STM32Serial(int id, int baudrate, GpioPin tx, GpioPin rx,
 void STM32Serial::commonInit(int id, int baudrate, GpioPin tx, GpioPin rx,
                              GpioPin rts, GpioPin cts)
 {
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     port->IRQenable();
     IRQregisterIrq(port->getIRQn(),&STM32Serial::IRQhandleInterrupt,this);
     STM32SerialBase::commonInit(id,baudrate,tx,rx,rts,cts);
@@ -611,16 +611,16 @@ void STM32Serial::IRQwrite(const char *str)
     // We can reach here also with only kernel paused, so make sure
     // interrupts are disabled
     bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastDisableInterrupts();
+    if(interrupts) fastGlobalIrqLock();
     STM32SerialBase::IRQwrite(str);
-    if(interrupts) fastEnableInterrupts();
+    if(interrupts) fastGlobalIrqUnlock();
 }
 
 STM32Serial::~STM32Serial()
 {
     waitSerialTxFifoEmpty();
     {
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         port->get()->CR1=0;
         IRQunregisterIrq(port->getIRQn(),&STM32Serial::IRQhandleInterrupt,this);
         port->IRQdisable();
@@ -650,7 +650,7 @@ void STM32DMASerial::commonInit(int id, int baudrate, GpioPin tx, GpioPin rx,
     //Check if DMA is supported for this port
     auto dma=port->getDma();
     if(!dma.get()) errorHandler(UNEXPECTED);
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
 
     dma.IRQenable();
     IRQregisterIrq(dma.getTxIRQn(),&STM32DMASerial::IRQhandleDmaTxInterrupt,this);
@@ -762,7 +762,7 @@ void STM32DMASerial::IRQhandleDmaTxInterrupt()
 
 void STM32DMASerial::waitDmaWriteEnd()
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     // If a previous DMA xfer is in progress, wait
     if(dmaTxInProgress)
     {
@@ -770,7 +770,7 @@ void STM32DMASerial::waitDmaWriteEnd()
         do {
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         } while(txWaiting);
@@ -831,18 +831,18 @@ void STM32DMASerial::IRQwrite(const char *str)
     //We can reach here also with only kernel paused, so make sure
     //interrupts are disabled
     bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastDisableInterrupts();
+    if(interrupts) fastGlobalIrqLock();
     //Wait until DMA xfer ends. EN bit is cleared by hardware on transfer end
     port->getDma().IRQwaitDmaWriteStop();
     STM32SerialBase::IRQwrite(str);
-    if(interrupts) fastEnableInterrupts();
+    if(interrupts) fastGlobalIrqUnlock();
 }
 
 STM32DMASerial::~STM32DMASerial()
 {
     waitSerialTxFifoEmpty();
     {
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         port->get()->CR1=0;
         IRQstopDmaRead();
         auto dma=port->getDma();

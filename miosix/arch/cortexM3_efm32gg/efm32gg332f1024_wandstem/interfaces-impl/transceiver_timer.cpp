@@ -35,7 +35,7 @@ static VHT* vht=nullptr;
 static VirtualClock *vt=nullptr;
 
 long long TransceiverTimer::getValue() const{
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return vt->uncorrected2corrected(b.IRQgetCurrentTickVht());
 }
 
@@ -44,7 +44,7 @@ void TransceiverTimer::wait(long long tick){
 }
 
 bool TransceiverTimer::absoluteWait(long long tick){
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     
     long long t=b.removeBasicCorrection(vht->corrected2uncorrected(vt->corrected2uncorrected(tick)));
     b.setModeTransceiverTimer(true);

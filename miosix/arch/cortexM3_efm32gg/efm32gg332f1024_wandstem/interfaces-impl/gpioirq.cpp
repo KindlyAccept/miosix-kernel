@@ -71,7 +71,7 @@ void registerGpioIrq(GpioPin pin, GpioIrqEdge edge, function<void ()> callback)
     
     bool failed=false;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         static bool first=false;
         if(first==false)
         {
@@ -111,7 +111,7 @@ void enableGpioIrq(GpioPin pin)
 {
     bool ok;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         ok=IRQenableGpioIrq(pin);
     }
     if(ok==false) throw runtime_error("Pin number not in use");
@@ -121,7 +121,7 @@ void disableGpioIrq(GpioPin pin)
 {
     bool ok;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         ok=IRQdisableGpioIrq(pin);
     }
     if(ok==false) throw runtime_error("Pin number not in use");
@@ -151,7 +151,7 @@ void unregisterGpioIrq(GpioPin pin)
     if(number>15) throw range_error("Pin number out of range");
     function<void ()> empty;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         IRQdisableGpioIrq(pin);
         //Swap is nothrow guaranteed, so it can't call unexpected code
         //with irq disabled

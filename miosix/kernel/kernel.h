@@ -242,16 +242,16 @@ public:
      * effectively put the thread in wait status.
      *
      * \code
-     * disableInterrupts();
+     * globalIrqLock();
      * ...
      * Thread::IRQwait(); //Return immediately
-     * enableInterrupts();
+     * globalIrqUnlock();
      * Thread::yield(); //After this, thread is in wait status
      * \endcode
      *
      * Consider using IRQenableIrqAndWait() instead.
      */
-    static void IRQwait();
+    // static void IRQwait();
 
     /**
      * This method stops the thread until wakeup() is called.

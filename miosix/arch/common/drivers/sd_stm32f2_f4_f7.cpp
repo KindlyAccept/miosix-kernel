@@ -1023,12 +1023,12 @@ static bool multipleBlockRead(unsigned char *buffer, unsigned int nblk,
     {
         //Block size 512 bytes, block data xfer, from card to controller
         SDIO->DCTRL=(9<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DTEN;
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         while(waiting)
         {
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         }
@@ -1135,12 +1135,12 @@ static bool multipleBlockWrite(const unsigned char *buffer, unsigned int nblk,
     {
         //Block size 512 bytes, block data xfer, from card to controller
         SDIO->DCTRL=(9<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         while(waiting)
         {
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         }
@@ -1219,7 +1219,7 @@ static void initSDIOPeripheral()
 {
     {
         //Doing read-modify-write on RCC->APBENR2 and gpios, better be safe
-        FastInterruptDisableLock lock;
+        FastGlobalIrqLock lock;
         RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN
                       | RCC_AHB1ENR_GPIODEN
                       | RCC_AHB1ENR_DMA2EN;

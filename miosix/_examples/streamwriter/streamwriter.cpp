@@ -89,7 +89,7 @@ void senseThread(void *argv)
             Record sample=readSensors();
             processSensorData(sample);
             {
-                FastInterruptDisableLock dLock;
+                FastGlobalIrqLock dLock;
                 if(queuedSamples.IRQput(sample)==false) statDroppedSamples++;
                 else statQueuePush++;
             }
@@ -254,7 +254,7 @@ void stopSensingChain()
     this_thread::sleep_for(milliseconds(20)); //Wait for threads to terminate
     //Wake threads eventually locked somewhere
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         Record record;
         queuedSamples.IRQput(record);
     }

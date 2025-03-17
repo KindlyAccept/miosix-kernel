@@ -159,7 +159,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 
     Record* record = nullptr;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         // We disable interrupts because IRQget() is nonblocking, unlike get()
         if (emptyQueue.IRQget(record) == false)
         {

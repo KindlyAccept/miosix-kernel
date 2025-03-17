@@ -43,7 +43,7 @@ void initLcd(unsigned int numSegments, unsigned int contrast)
     contrast = min(contrast, 31u);
     
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         PM->PM_UNLOCK = PM_UNLOCK_KEY(0xaa)
                     | PM_UNLOCK_ADDR(PM_PBAMASK_OFFSET);
         PM->PM_PBAMASK |= PM_PBAMASK_LCDCA;

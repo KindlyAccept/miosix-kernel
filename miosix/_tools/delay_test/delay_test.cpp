@@ -10,7 +10,7 @@ using out=Gpio<GPIOA_BASE,1>; //Select a free GPIO depending on the board
 
 void tdus(int n)
 {
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     for(;;)
     {
         out::high();
@@ -22,7 +22,7 @@ void tdus(int n)
 
 void tdms(int n)
 {
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     for(;;)
     {
         out::high();

@@ -401,7 +401,7 @@ public:
 #define DEFAULT_OS_TIMER_INTERFACE_IMPLEMENTATION(timer) \
 long long getTime() noexcept                       \
 {                                                  \
-    FastInterruptDisableLock dLock;                \
+    FastGlobalIrqLock dLock;                       \
     return timer.IRQgetTimeNs();                   \
 }                                                  \
                                                    \
@@ -427,7 +427,7 @@ void IRQosTimerSetTime(long long ns) noexcept      \
                                                    \
 unsigned int osTimerGetFrequency()                 \
 {                                                  \
-    FastInterruptDisableLock dLock;                \
+    FastGlobalIrqLock dLock;                       \
     return timer.IRQTimerFrequency();              \
 }
 

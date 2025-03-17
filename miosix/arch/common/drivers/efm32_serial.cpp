@@ -47,7 +47,7 @@ EFM32Serial::EFM32Serial(int id, int baudrate, GpioPin tx, GpioPin rx)
           baudrate(baudrate)
 {
     {
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         tx.mode(Mode::OUTPUT_HIGH);
         rx.mode(Mode::INPUT_PULL_UP_FILTER);
         switch(id)
@@ -104,7 +104,7 @@ ssize_t EFM32Serial::readBlock(void *buffer, size_t size, off_t where)
     Lock<FastMutex> l(rxMutex);
     char *buf=reinterpret_cast<char*>(buffer);
     size_t result=0;
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     for(;;)
     {
         //Try to get data from the queue
@@ -112,7 +112,7 @@ ssize_t EFM32Serial::readBlock(void *buffer, size_t size, off_t where)
         {
             if(rxQueue.tryGet(buf[result])==false) break;
             //This is here just not to keep IRQ disabled for the whole loop
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
         }
         //Don't block if we have at least one char
         //This is required for \n detection
@@ -122,7 +122,7 @@ ssize_t EFM32Serial::readBlock(void *buffer, size_t size, off_t where)
             rxWaiting=Thread::IRQgetCurrentThread();
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         } while(rxWaiting);
@@ -147,14 +147,14 @@ void EFM32Serial::IRQwrite(const char *str)
     // We can reach here also with only kernel paused, so make sure
     // interrupts are disabled.
     bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastDisableInterrupts();
+    if(interrupts) fastGlobalIrqLock();
     while(*str)
     {
         while((port->STATUS & USART_STATUS_TXBL)==0) ;
         port->TXDATA=*str++;
     }
     waitSerialTxFifoEmpty();
-    if(interrupts) fastEnableInterrupts();
+    if(interrupts) fastGlobalIrqUnlock();
 }
 
 int EFM32Serial::ioctl(int cmd, void* arg)
@@ -187,7 +187,7 @@ EFM32Serial::~EFM32Serial()
 {
     waitSerialTxFifoEmpty();
     
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     port->CMD=USART_CMD_TXDIS
             | USART_CMD_RXDIS;
     port->ROUTE=0;

@@ -54,7 +54,7 @@ void tim3impl()
 int main()
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
         RCC_SYNC();
         IRQregisterIrq(TIM3_IRQn,tim3impl);

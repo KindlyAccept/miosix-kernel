@@ -321,10 +321,10 @@ void Thread::wait()
     //Return here after wakeup
 }
 
-void Thread::IRQwait()
-{
-    const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
-}
+// void Thread::IRQwait()
+// {
+//     const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
+// }
 
 void Thread::PKrestartKernelAndWait(PauseKernelLock& dLock)
 {
@@ -791,7 +791,7 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
 void Thread::IRQenableIrqAndWaitImpl()
 {
     const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
-    auto savedNesting=interruptDisableNesting; //For InterruptDisableLock
+    auto savedNesting=interruptDisableNesting; //For GlobalIrqLock
     interruptDisableNesting=0;
     #ifdef WITH_SMP
     auto savedHoldingCore=globalIntrNestLockHoldingCore;
@@ -815,7 +815,7 @@ TimedWaitResult Thread::IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs)
     SleepData sleepData(t,absoluteTimeNs);
     t->flags.IRQsetWait(true); //timedWait thread: set wait flag
     IRQaddToSleepingList(&sleepData);
-    auto savedNesting=interruptDisableNesting; //For InterruptDisableLock
+    auto savedNesting=interruptDisableNesting; //For GlobalIrqLock
     interruptDisableNesting=0;
     #ifdef WITH_SMP
     auto savedHoldingCore=globalIntrNestLockHoldingCore;

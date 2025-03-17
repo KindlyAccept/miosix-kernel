@@ -53,7 +53,7 @@ ATSAMSerial::ATSAMSerial(int id, int baudrate)
     if(id!=2) errorHandler(UNEXPECTED);
     
     {
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         
         port=USART2;
         
@@ -83,7 +83,7 @@ ssize_t ATSAMSerial::readBlock(void *buffer, size_t size, off_t where)
     Lock<FastMutex> l(rxMutex);
     char *buf=reinterpret_cast<char*>(buffer);
     size_t result=0;
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     DeepSleepLock dpLock;
     for(;;)
     {
@@ -92,7 +92,7 @@ ssize_t ATSAMSerial::readBlock(void *buffer, size_t size, off_t where)
         {
             if(rxQueue.tryGet(buf[result])==false) break;
             //This is here just not to keep IRQ disabled for the whole loop
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
         }
         if(idle && result>0) break;
         if(result==size) break;
@@ -101,7 +101,7 @@ ssize_t ATSAMSerial::readBlock(void *buffer, size_t size, off_t where)
             rxWaiting=Thread::IRQgetCurrentThread();
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         } while(rxWaiting);
@@ -126,14 +126,14 @@ void ATSAMSerial::IRQwrite(const char *str)
     // We can reach here also with only kernel paused, so make sure
     // interrupts are disabled.
     bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastDisableInterrupts();
+    if(interrupts) fastGlobalIrqLock();
     while(*str)
     {
         while((port->US_CSR & US_CSR_TXRDY) == 0) ;
         port->US_THR = *str++;
     }
     waitSerialTxFifoEmpty();
-    if(interrupts) fastEnableInterrupts();
+    if(interrupts) fastGlobalIrqUnlock();
 }
 
 int ATSAMSerial::ioctl(int cmd, void *arg)
@@ -200,7 +200,7 @@ ATSAMSerial::~ATSAMSerial()
     port->US_CR = US_CR_TXDIS | US_CR_RXDIS;
     port->US_IDR = US_IDR_RXRDY | US_IDR_TIMEOUT;
     
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     //TODO: USART2 hardcoded
     IRQunregisterIrq(USART2_IRQn,&ATSAMSerial::IRQhandleInterrupt,this);
     PM->PM_UNLOCK = PM_UNLOCK_KEY(0xaa) | PM_UNLOCK_ADDR(PM_PBAMASK_OFFSET);

@@ -46,7 +46,7 @@ I2C1Master::I2C1Master(GpioPin sda, GpioPin scl, int frequency)
     //iprintf("fpclk1=%d\n",fpclk1);
     
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         // NOTE: GPIOs need to be configured before enabling the peripheral or
         // the first read/write call blocks forever. Smells like a hw bug
         // NOTE: ALTERNATE_OD as the I2C peripheral doesn't enforce open drain
@@ -103,7 +103,7 @@ bool I2C1Master::recv(unsigned char address, void *data, int len)
     address |= 0x01;
     if(startWorkaround(address,len)==false || I2C1->SR2 & I2C_SR2_TRA)
     {
-        fastEnableInterrupts(); //HACK Workaround critical section end
+        fastGlobalIrqUnlock(); //HACK Workaround critical section end
         stop();
         return false;
     }
@@ -126,15 +126,15 @@ bool I2C1Master::recv(unsigned char address, void *data, int len)
                    | DMA_SxCR_DMEIE   //Interrupt on direct mode error
                    | DMA_SxCR_EN;     //Start DMA
 
-    fastEnableInterrupts(); //HACK Workaround critical section end
+    fastGlobalIrqUnlock(); //HACK Workaround critical section end
 
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         while(waiting)
         {
             waiting->IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         }
@@ -180,12 +180,12 @@ bool I2C1Master::send(unsigned char address, const void *data, int len, bool sen
     I2C1->CR2 |= I2C_CR2_DMAEN | I2C_CR2_ITERREN;
  
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         while(waiting)
         {
             waiting->IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         }
@@ -211,7 +211,7 @@ I2C1Master::~I2C1Master()
     IRQunregisterIrq(I2C1_ER_IRQn,&I2C1Master::I2C1errHandlerImpl,this);
 
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->APB1ENR &= ~RCC_APB1ENR_I2C1EN;
         RCC_SYNC();
     }
@@ -268,7 +268,7 @@ bool I2C1Master::startWorkaround(unsigned char address, int len)
     if(!waitStatus1()) return false;
     //If the transfer is single byte, then ACK must be reset before EV6 cleared
     if(len==1) I2C1->CR1 &= ~I2C_CR1_ACK;
-    fastDisableInterrupts(); //HACK Workaround critical section start
+    fastGlobalIrqLock(); //HACK Workaround critical section start
     bool result=true;
     //EV6: Must read SR1 and SR2 to clear ADDR
     if(I2C1->SR1 & I2C_SR1_AF) result=false;
@@ -282,12 +282,12 @@ bool I2C1Master::waitStatus1()
     waiting=Thread::getCurrentThread();
     I2C1->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         while(waiting)
         {
             waiting->IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         }

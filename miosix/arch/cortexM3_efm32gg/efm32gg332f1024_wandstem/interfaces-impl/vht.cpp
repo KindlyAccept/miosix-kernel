@@ -65,7 +65,7 @@ void VHT::update(long long baseTheoretical, long long baseComputed, long long cl
     
     //Save modification to make effective the update
     {
-        FastInterruptDisableLock dl;
+        FastGlobalIrqLock dl;
         IRQoffsetUpdate(baseTheoretical, baseComputed);
         
         factorI = static_cast<unsigned int>((temp & 0xFFFFFFFF00000000LLU)>>32);
@@ -99,7 +99,7 @@ void VHT::loop() {
     while(1){
         Thread::wait();
         {
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             hrtActual=HRTB::syncPointHrtActual;
             hrtExpected=HRTB::syncPointHrtExpected;
             tempPendingVhtSync=VHT::pendingVhtSync;

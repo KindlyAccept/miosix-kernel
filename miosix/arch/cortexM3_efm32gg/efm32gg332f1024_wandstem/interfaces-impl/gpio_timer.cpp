@@ -36,7 +36,7 @@ namespace miosix{
  */
 
 long long GPIOtimer::getValue() const{
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return b.IRQgetCurrentTick();
 }
 

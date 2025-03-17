@@ -362,7 +362,7 @@ private:
 
 /**
  * This class allows to temporarily restart kernel in a scope where it is
- * paused with an InterruptDisableLock.
+ * paused with a PauseKernelLock.
  *
  * Example:
  * \code
@@ -372,7 +372,7 @@ private:
  *     PauseKernelLock dLock;
  *     //Now kernel paused
  *     {
- *         RestartKernelLock eLock(dLock);
+ *         PauseKernelUnlock eLock(dLock);
  *         //Now kernel back started
  *     }
  *     //Now kernel again paused
@@ -380,23 +380,23 @@ private:
  * //Finally kernel started
  * \endcode
  */
-class PauseKernelUnock
+class PauseKernelUnlock
 {
 public:
     /**
      * Constructor, restarts kernel.
      * \param l the PauseKernelLock that disabled interrupts
      */
-    PauseKernelUnock(PauseKernelLock& l) { (void)l; restartKernel(); }
+    PauseKernelUnlock(PauseKernelLock& l) { (void)l; restartKernel(); }
 
     /**
      * Destructor.
      * Disable back interrupts.
      */
-    ~PauseKernelUnock() { pauseKernel(); }
+    ~PauseKernelUnlock() { pauseKernel(); }
 
-    PauseKernelUnock(const PauseKernelUnock&)=delete;
-    PauseKernelUnock& operator= (const PauseKernelUnock&)=delete;
+    PauseKernelUnlock(const PauseKernelUnlock&)=delete;
+    PauseKernelUnlock& operator= (const PauseKernelUnlock&)=delete;
 };
 
 /**

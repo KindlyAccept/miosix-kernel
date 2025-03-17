@@ -76,7 +76,7 @@ void PowerManager::deepSleepUntil(long long int when/*, Unit unit*/)
     
     Lock<FastMutex> l(powerMutex);  //To access reference counts freely
     PauseKernelLock pkLock;         //To run unexpected IRQs without context switch
-    FastInterruptDisableLock dLock; //To do everything else atomically
+    FastGlobalIrqLock dLock; //To do everything else atomically
 
     const int timeToSyncAfterWakeup = 3;
     
@@ -126,7 +126,7 @@ void PowerManager::deepSleepUntil(long long int when/*, Unit unit*/)
                     NVIC_ClearPendingIRQ(RTC_IRQn);
                     break;
                 }else{
-                    FastInterruptEnableLock eLock(dLock);
+                    FastGlobalIrqUnlock eLock(dLock);
                     // Here interrupts are enabled, so the software part of RTC 
                     // can be updated
                     // NOP operation to be sure that the interrupt can be executed
@@ -142,7 +142,7 @@ void PowerManager::deepSleepUntil(long long int when/*, Unit unit*/)
                 //serving can't cause a context switch and fuck up things.
                 IRQresyncClock();
                 {
-                    FastInterruptEnableLock eLock(dLock);
+                    FastGlobalIrqUnlock eLock(dLock);
                     //Here interrupts are enabled, so the interrupt gets served
                     __NOP();
                 }

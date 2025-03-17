@@ -76,7 +76,7 @@ NonVolatileStorage& NonVolatileStorage::instance()
 
 bool NonVolatileStorage::erase()
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     if(IRQunlock()==false) return false;
     
     while(FLASH->SR & FLASH_SR_BSY) ;
@@ -99,7 +99,7 @@ bool NonVolatileStorage::program(const void* data, int size, int offset)
     const char *ptr=reinterpret_cast<const char *>(data);
     size=min(size,capacity()-offset);
     
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     if(IRQunlock()==false) return false;
     
     bool result=true;
@@ -196,7 +196,7 @@ void reboot()
     FilesystemManager::instance().umountAll();
     #endif //WITH_FILESYSTEM
 
-    disableInterrupts();
+    globalIrqLock();
     IRQsystemReboot();
 }
 

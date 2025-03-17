@@ -46,7 +46,7 @@ static void displayThread(void *)
 {
     #define CONFIG(x) x::high(); x::mode(Mode::OUTPUT)
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         AFIO->MAPR=1<<25;//To free PB3 and PB4 from JTAG in stm32vldiscovery
         CONFIG(digit0);
         CONFIG(digit1);

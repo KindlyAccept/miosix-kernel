@@ -42,7 +42,7 @@ void VirtualClock::update(long long baseTheoretical, long long baseComputed, lon
     //similarly to the previous division, calculates the inverse factor.
     unsigned long long inverseTemp = ((syncPeriod+clockCorrection)<<28)/syncPeriod;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
 
         //the calculated factor is then split into integer and decimal part.
         //Both of them are 32 bits long, since the fixed point implementation

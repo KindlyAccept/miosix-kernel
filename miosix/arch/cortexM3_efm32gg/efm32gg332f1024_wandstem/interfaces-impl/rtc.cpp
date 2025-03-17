@@ -83,7 +83,7 @@ static WaitResult waitImpl(long long value, bool eventSensitive)
     RTC->COMP0=(value-1) & 0xffffff;
     while(RTC->SYNCBUSY & RTC_SYNCBUSY_COMP0) ;
     
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     //NOTE: this is very important, enabling the interrupt without clearing the
     //interrupt flag causes the function to return prematurely, sometimes
     RTC->IFC=RTC_IFC_COMP0;
@@ -122,7 +122,7 @@ static WaitResult waitImpl(long long value, bool eventSensitive)
         rtcWaiting=Thread::IRQgetCurrentThread();
         Thread::IRQwait();
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             Thread::yield();
         }
         //The readRtc() check in the while is for waits past one RTC period
@@ -164,7 +164,7 @@ Rtc& Rtc::instance()
 long long Rtc::getValue() const
 {
     //readRtc() is not reentrant, and is also called in the GPIO timestamp irq
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return IRQreadRtc();
 }
 
@@ -239,7 +239,7 @@ unsigned int Rtc::getTickFrequency() const
 
 Rtc::Rtc() : tc(frequency)
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     
     //
     // Configure timer

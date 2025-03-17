@@ -74,7 +74,7 @@ static void initDisplay()
     TIM3->PSC=0;
     TIM3->ARR=60000; //24MHz/60000=400Hz 
     TIM3->CR1=TIM_CR1_CEN;
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     IRQregisterIrq(TIM3_IRQn,TIM3_IRQHandler);
 }
 
@@ -199,7 +199,7 @@ NonVolatileStorage& NonVolatileStorage::instance()
 
 bool NonVolatileStorage::erase()
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     if(IRQunlock()==false) return false;
     
     while(FLASH->SR & FLASH_SR_BSY) ;
@@ -221,7 +221,7 @@ bool NonVolatileStorage::program(const void* data, int size)
     const char *ptr=reinterpret_cast<const char *>(data);
     size=min(size,capacity());
     
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     if(IRQunlock()==false) return false;
     
     bool result=true;
@@ -328,7 +328,7 @@ void reboot()
     FilesystemManager::instance().umountAll();
     #endif //WITH_FILESYSTEM
 
-    disableInterrupts();
+    globalIrqLock();
     IRQsystemReboot();
 }
 

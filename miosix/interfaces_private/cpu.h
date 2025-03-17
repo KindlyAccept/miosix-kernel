@@ -100,7 +100,7 @@ void initKernelThreadCtxsave(unsigned int *ctxsave, void (*pc)(void *(*)(void*),
  * function, even though the kernel cannot be considered started until this
  * function completes, causing the first context switch.
  * For this reason this function must be written with great care not to call
- * code that uses InterruptDisableLock, such as general purpose driver classes
+ * code that uses GlobalIrqLock, such as general purpose driver classes
  * that would be ran either before or after start of the kernel.
  */
 void IRQportableStartKernel();

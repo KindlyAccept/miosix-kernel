@@ -49,15 +49,15 @@ enum Error
     /// to pauseKernel<br>Error is UNRECOVERABLE
     PAUSE_KERNEL_NESTING,
 
-    /// A call to enableInterrupts that does not match a previous call
-    /// to disableInterrupts<br>Error is UNRECOVERABLE
-    DISABLE_INTERRUPTS_NESTING,
+    /// A call to globalIrqUnlock that does not match a previous call
+    /// to globalIrqLock<br>Error is UNRECOVERABLE
+    GLOBAL_LOCK_NESTING,
 
     /// An attempt to lock twice a non recursive mutex happened.<br>
     /// Error is UNRECOVERABLE
     MUTEX_DEADLOCK,
 
-    /// The calls to pauseKernel or disableInterrupts were nested too
+    /// The calls to pauseKernel or globalIrqLock were nested too
     ///much. Error is UNRECOVERABLE
     NESTING_OVERFLOW,
 

@@ -74,7 +74,7 @@ void Spi::disable()
 Spi::Spi()
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         CMU->HFPERCLKEN0|=CMU_HFPERCLKEN0_USART1;
     }
     USART1->CTRL=USART_CTRL_MSBF

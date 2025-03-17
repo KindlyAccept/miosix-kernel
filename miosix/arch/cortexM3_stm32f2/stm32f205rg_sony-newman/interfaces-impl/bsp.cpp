@@ -187,7 +187,7 @@ void bspInit2()
 void shutdown()
 {
     // Taken from underverk's SmartWatch_Toolchain/src/Arduino/Arduino.cpp
-    disableInterrupts();
+    globalIrqLock();
     BUZER_PWM_Pin::high();
     delayMs(200);
     BUZER_PWM_Pin::low();
@@ -204,7 +204,7 @@ void shutdown()
 
 void reboot()
 {
-    disableInterrupts();
+    globalIrqLock();
     IRQsystemReboot();
 }
 
@@ -373,7 +373,7 @@ void PowerManagement::setCoreFrequency(CoreFrequency cf)
     Lock<FastMutex> l2(i2cMutex());
     
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         CoreFrequency oldCoreFreq=coreFreq;
         coreFreq=cf; //Need to change this *before* setting prescalers/core freq
         if(coreFreq>oldCoreFreq)
@@ -432,7 +432,7 @@ void PowerManagement::goDeepSleep(int ms)
     Lock<FastMutex> l2(i2cMutex());
     
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         //Enable event 22 (RTC WKUP)
         if(wakeOnButton)
         {
@@ -477,7 +477,7 @@ PowerManagement::PowerManagement() : i2c(new I2C1Master(i2c::I2C_SDA_Pin::getPin
         coreFreq(FREQ_120MHz), powerManagementMutex(FastMutex::RECURSIVE)
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->APB2ENR |= RCC_APB2ENR_ADC1EN | RCC_APB2ENR_SYSCFGEN;
         RCC_SYNC();
         //Configure PB1 (POWER_BUTTON) as EXTI input
@@ -616,7 +616,7 @@ int LightSensor::read()
 LightSensor::LightSensor()
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
         RCC_SYNC();
     }
@@ -711,7 +711,7 @@ bool Rtc::notSetYet() const
 Rtc::Rtc()
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         RCC->APB1ENR |= RCC_APB1ENR_PWREN;
         RCC_SYNC();
         PWR->CR |= PWR_CR_DBP;         //Enable access to RTC registers

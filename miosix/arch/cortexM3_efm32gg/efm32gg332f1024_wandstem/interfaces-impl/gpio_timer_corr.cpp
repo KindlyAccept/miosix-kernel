@@ -46,7 +46,7 @@ static VirtualClock *vt=nullptr;
  */
 
 long long GPIOtimerCorr::getValue() const{
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     return vt->uncorrected2corrected(b.IRQgetCurrentTickVht());
 }
 

@@ -179,7 +179,7 @@ private:
      * Wait until the timer overflows from 0xffff to 0. Can only be called with
      * interrupts disabled
      */
-    void IRQwaitForTimerOverflow(FastInterruptDisableLock& dLock);
+    void IRQwaitForTimerOverflow(FastGlobalIrqLock& dLock);
 
     /**
      * Timer interrupt handler

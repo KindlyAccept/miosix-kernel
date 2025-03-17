@@ -86,11 +86,11 @@ bool ControlScheduler::PKaddThread(Thread *thread,
     #endif //SCHED_CONTROL_FIXED_POINT
     thread->schedData.priority=priority;
     {
-        //Note: can't use FastInterruptDisableLock here since this code is
+        //Note: can't use FastGlobalIrqLock here since this code is
         //also called *before* the kernel is started.
-        //Using FastInterruptDisableLock would enable interrupts prematurely
+        //Using FastGlobalIrqLock would enable interrupts prematurely
         //and cause all sorts of misterious crashes
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         thread->schedData.next=threadList;
         threadList=thread;
         threadListSize++;
@@ -121,7 +121,7 @@ void ControlScheduler::PKremoveDeadThreads()
     {
         Thread *toBeDeleted=threadList;
         {
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             threadList=threadList->schedData.next;
             threadListSize--;
             SP_Tr-=bNominal; //One thread less, reduce round time
@@ -138,7 +138,7 @@ void ControlScheduler::PKremoveDeadThreads()
             if(it->schedData.next->flags.isDeleted()==false) continue;
             Thread *toBeDeleted=it->schedData.next;
             {
-                FastInterruptDisableLock dLock;
+                FastGlobalIrqLock dLock;
                 it->schedData.next=it->schedData.next->schedData.next;
                 threadListSize--;
                 SP_Tr-=bNominal; //One thread less, reduce round time
@@ -149,7 +149,7 @@ void ControlScheduler::PKremoveDeadThreads()
         }
     }
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         IRQrecalculateAlfa();
     }
 }
@@ -159,7 +159,7 @@ void ControlScheduler::PKsetPriority(Thread *thread,
 {
     thread->schedData.priority=newPriority;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         IRQrecalculateAlfa();
     }
 }
@@ -493,11 +493,11 @@ bool ControlScheduler::PKaddThread(Thread *thread,
     thread->schedData.priority=priority;
     thread->schedData.atlEntry.t = thread;
     {
-        //Note: can't use FastInterruptDisableLock here since this code is
+        //Note: can't use FastGlobalIrqLock here since this code is
         //also called *before* the kernel is started.
-        //Using FastInterruptDisableLock would enable interrupts prematurely
+        //Using FastGlobalIrqLock would enable interrupts prematurely
         //and cause all sorts of misterious crashes
-        InterruptDisableLock dLock;
+        GlobalIrqLock dLock;
         thread->schedData.next=threadList;
         threadList=thread;
         threadListSize++;
@@ -538,7 +538,7 @@ void ControlScheduler::PKremoveDeadThreads()
     {
         Thread *toBeDeleted=threadList;
         {
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             threadList=threadList->schedData.next;
             threadListSize--;
             SP_Tr-=bNominal; //One thread less, reduce round time
@@ -555,7 +555,7 @@ void ControlScheduler::PKremoveDeadThreads()
             if(it->schedData.next->flags.isDeleted()==false) continue;
             Thread *toBeDeleted=it->schedData.next;
             {
-                FastInterruptDisableLock dLock;
+                FastGlobalIrqLock dLock;
                 it->schedData.next=it->schedData.next->schedData.next;
                 threadListSize--;
                 SP_Tr-=bNominal; //One thread less, reduce round time
@@ -566,7 +566,7 @@ void ControlScheduler::PKremoveDeadThreads()
         }
     }
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         IRQrecalculateAlfa();
     }
 }
@@ -576,7 +576,7 @@ void ControlScheduler::PKsetPriority(Thread *thread,
 {
     thread->schedData.priority=newPriority;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         IRQrecalculateAlfa();
     }
 }

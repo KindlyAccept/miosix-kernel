@@ -52,7 +52,7 @@ int main()
 {
     bool vbusSensing = true;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         
         //Turn on USB peripheral
         RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;

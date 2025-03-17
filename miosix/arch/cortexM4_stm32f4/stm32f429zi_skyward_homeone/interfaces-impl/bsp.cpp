@@ -314,7 +314,7 @@ void reboot()
     FilesystemManager::instance().umountAll();
     #endif //WITH_FILESYSTEM
 
-    disableInterrupts();
+    globalIrqLock();
     IRQsystemReboot();
 }
 

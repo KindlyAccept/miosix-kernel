@@ -89,7 +89,7 @@ LPC2000Serial::LPC2000Serial(int id, int baudrate) : Device(Device::TTY),
         txQueue(swTxQueue), rxQueue(hwRxQueueLen+baudrate/500),
         txWaiting(nullptr), rxWaiting(nullptr), idle(true)
 {
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     if(id<0 || id>1 || ports[id]!=0) errorHandler(UNEXPECTED);
     ports[id]=this;
     if(id==0)
@@ -133,7 +133,7 @@ ssize_t LPC2000Serial::readBlock(void *buffer, size_t size, off_t where)
     Lock<FastMutex> l(rxMutex);
     char *buf=reinterpret_cast<char*>(buffer);
     size_t result=0;
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     for(;;)
     {
         //Try to get data from the queue
@@ -141,7 +141,7 @@ ssize_t LPC2000Serial::readBlock(void *buffer, size_t size, off_t where)
         {
             if(rxQueue.tryGet(buf[result])==false) break;
             //This is here just not to keep IRQ disabled for the whole loop
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
         }
         if(idle && result>0) break;
         if(result==size) break;
@@ -150,7 +150,7 @@ ssize_t LPC2000Serial::readBlock(void *buffer, size_t size, off_t where)
             rxWaiting=Thread::IRQgetCurrentThread();
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         } while(rxWaiting);
@@ -161,7 +161,7 @@ ssize_t LPC2000Serial::readBlock(void *buffer, size_t size, off_t where)
 ssize_t LPC2000Serial::writeBlock(const void *buffer, size_t size, off_t where)
 {
     Lock<FastMutex> l(txMutex);
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     size_t len=size;
     const char *buf=reinterpret_cast<const char*>(buffer);
     while(len>0)
@@ -282,7 +282,7 @@ LPC2000Serial::~LPC2000Serial()
 {
     waitSerialTxFifoEmpty();
     
-    InterruptDisableLock dLock;
+    GlobalIrqLock dLock;
     //Disable UART0
     serial->LCR=0;//DLAB disabled
     serial->FCR=0;

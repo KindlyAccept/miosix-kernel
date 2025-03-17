@@ -64,7 +64,7 @@ void SynchronizedServo::enable(int channel)
     if(status!=STOPPED) return; // If timer enabled ignore the call
     
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         // Calling the mode() function on a GPIO is subject to race conditions
         // between threads on the STM32, so we disable interrupts
         switch(channel)
@@ -111,7 +111,7 @@ void SynchronizedServo::disable(int channel)
     if(status!=STOPPED) return; // If timer enabled ignore the call
     
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         // Calling the mode() function on a GPIO is subject to race conditions
         // between threads on the STM32, so we disable interrupts
         switch(channel)
@@ -204,7 +204,7 @@ void SynchronizedServo::stop()
     TIM4->CCR3=0;
     TIM4->CCR4=0;
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         // Wakeup an eventual thread waiting on waitForCycleBegin()
         if(waiting) waiting->IRQwakeup();
         IRQwaitForTimerOverflow(dLock);
@@ -217,7 +217,7 @@ bool SynchronizedServo::waitForCycleBegin()
     // No need to lock the mutex because disabling interrupts is enough to avoid
     // race conditions. Also, locking the mutex here would prevent other threads
     // from calling other member functions of this class
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     if(status!=STARTED) return true;
     IRQwaitForTimerOverflow(dLock);
     return status!=STARTED;
@@ -259,7 +259,7 @@ void SynchronizedServo::setMaxPulseWidth(float maxPulse)
 SynchronizedServo::SynchronizedServo() : status(STOPPED)
 {
     {
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         // The RCC register should be written with interrupts disabled to
         // prevent race conditions with other threads.
         RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
@@ -314,7 +314,7 @@ unsigned int SynchronizedServo::getPrescalerInputFrequency()
     return freq;
 }
 
-void SynchronizedServo::IRQwaitForTimerOverflow(FastInterruptDisableLock& dLock)
+void SynchronizedServo::IRQwaitForTimerOverflow(FastGlobalIrqLock& dLock)
 {
     waiting=Thread::IRQgetCurrentThread();
     while(waiting) Thread::IRQenableIrqAndWait(dLock);

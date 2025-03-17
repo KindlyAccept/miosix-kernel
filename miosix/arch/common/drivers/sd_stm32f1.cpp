@@ -1038,7 +1038,7 @@ static bool singleBlockRead(unsigned int *buffer, unsigned int lba)
     {
         // Since we read with polling, a context switch or interrupt here
         // would cause a fifo overrun, so we disable interrupts.
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
 
         SDIO->DLEN=512;
         //Block size 512 bytes, block data xfer, from card to controller
@@ -1056,7 +1056,7 @@ static bool singleBlockRead(unsigned int *buffer, unsigned int lba)
                 if(ClockController::IRQreduceClockSpeed())
                 {
                     //Disabling interrupts for too long is bad
-                    FastInterruptEnableLock eLock(dLock);
+                    FastGlobalIrqUnlock eLock(dLock);
                     //After an error during data xfer the card might be a little
                     //confused. So send STOP_TRANSMISSION command to reassure it
                     cr=Command::send(Command::CMD12,0);
@@ -1101,7 +1101,7 @@ static bool singleBlockWrite(const unsigned int *buffer, unsigned int lba)
     {
         // Since we write with polling, a context switch or interrupt here
         // would cause a fifo overrun, so we disable interrupts.
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
 
         cr=Command::IRQsend(Command::CMD24,lba);
         if(cr.IRQvalidateR1Response())
@@ -1119,7 +1119,7 @@ static bool singleBlockWrite(const unsigned int *buffer, unsigned int lba)
                 if(ClockController::IRQreduceClockSpeed())
                 {
                     //Disabling interrupts for too long is bad
-                    FastInterruptEnableLock eLock(dLock);
+                    FastGlobalIrqUnlock eLock(dLock);
                     //After an error during data xfer the card might be a little
                     //confused. So send STOP_TRANSMISSION command to reassure it
                     cr=Command::send(Command::CMD12,0);
@@ -1223,12 +1223,12 @@ static bool multipleBlockRead(unsigned int *buffer, unsigned int nblk,
     {
         //Block size 512 bytes, block data xfer, from card to controller
         SDIO->DCTRL=(9<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DTEN;
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         while(waiting)
         {
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         }
@@ -1317,12 +1317,12 @@ static bool multipleBlockWrite(const unsigned int *buffer, unsigned int nblk,
     {
         //Block size 512 bytes, block data xfer, from card to controller
         SDIO->DCTRL=(9<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
-        FastInterruptDisableLock dLock;
+        FastGlobalIrqLock dLock;
         while(waiting)
         {
             Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
+                FastGlobalIrqUnlock eLock(dLock);
                 Thread::yield();
             }
         }
@@ -1402,7 +1402,7 @@ static void initSDIOPeripheral()
 {
     {
         //Doing read-modify-write on RCC->APBENR2 and gpios, better be safe
-        FastInterruptDisableLock lock;
+        FastGlobalIrqLock lock;
         RCC->APB2ENR |= RCC_APB2ENR_IOPCEN | RCC_APB2ENR_IOPDEN;
         RCC_SYNC();
         #ifdef SD_DMA

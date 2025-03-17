@@ -168,7 +168,7 @@ public:
     void IRQinitTimer()
     {
         {
-            FastInterruptDisableLock dLock;
+            FastGlobalIrqLock dLock;
             RCC->APB1ENR |= RCC_APB1ENR_PWREN | RCC_APB1ENR_BKPEN;
             RCC_SYNC();
             PWR->CR |= PWR_CR_DBP;
@@ -318,14 +318,14 @@ bool IRQdeepSleep()
 // Set RTC->CNTH=0xffff; RTC->CNTL=0; in timer init not to wait 72 hours till test end.
 void test()
 {
-    FastInterruptDisableLock dLock;
+    FastGlobalIrqLock dLock;
     long long lastgood=0;
     for(;;)
     {
         auto current=timer.IRQgetTimeTick();
         if(current>0x180000000LL)
         {
-            FastInterruptEnableLock eLock(dLock);
+            FastGlobalIrqUnlock eLock(dLock);
             iprintf("Test failed fail=0x%llx lastgood=0x%llx\n",current,lastgood);
         } else if(current==0x100001000LL) IRQerrorLog("Test end\r\n");
         lastgood=current;
