@@ -81,7 +81,7 @@ static ProcessBase *kernel=nullptr;
 
 //Variable shared with lock.cpp for performance and encapsulation reasons
 extern volatile int kernelRunning;
-extern unsigned char interruptDisableNesting;
+extern unsigned char globalLockNesting;
 #ifdef WITH_SMP
 extern unsigned char globalIntrNestLockHoldingCore;
 #endif
@@ -791,8 +791,8 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
 void Thread::IRQenableIrqAndWaitImpl()
 {
     const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
-    auto savedNesting=interruptDisableNesting; //For GlobalIrqLock
-    interruptDisableNesting=0;
+    auto savedNesting=globalLockNesting; //For GlobalIrqLock
+    globalLockNesting=0;
     #ifdef WITH_SMP
     auto savedHoldingCore=globalIntrNestLockHoldingCore;
     globalIntrNestLockHoldingCore=0xff;
@@ -804,8 +804,8 @@ void Thread::IRQenableIrqAndWaitImpl()
     if(globalIntrNestLockHoldingCore!=0xff) errorHandler(UNEXPECTED);
     globalIntrNestLockHoldingCore=savedHoldingCore;
     #endif
-    if(interruptDisableNesting!=0) errorHandler(UNEXPECTED);
-    interruptDisableNesting=savedNesting;
+    if(globalLockNesting!=0) errorHandler(UNEXPECTED);
+    globalLockNesting=savedNesting;
 }
 
 TimedWaitResult Thread::IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs)
@@ -815,8 +815,8 @@ TimedWaitResult Thread::IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs)
     SleepData sleepData(t,absoluteTimeNs);
     t->flags.IRQsetWait(true); //timedWait thread: set wait flag
     IRQaddToSleepingList(&sleepData);
-    auto savedNesting=interruptDisableNesting; //For GlobalIrqLock
-    interruptDisableNesting=0;
+    auto savedNesting=globalLockNesting; //For GlobalIrqLock
+    globalLockNesting=0;
     #ifdef WITH_SMP
     auto savedHoldingCore=globalIntrNestLockHoldingCore;
     globalIntrNestLockHoldingCore=0xff;
@@ -828,8 +828,8 @@ TimedWaitResult Thread::IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs)
     if(globalIntrNestLockHoldingCore!=0xff) errorHandler(UNEXPECTED);
     globalIntrNestLockHoldingCore=savedHoldingCore;
     #endif
-    if(interruptDisableNesting!=0) errorHandler(UNEXPECTED);
-    interruptDisableNesting=savedNesting;
+    if(globalLockNesting!=0) errorHandler(UNEXPECTED);
+    globalLockNesting=savedNesting;
     bool removed=sleepingList.removeFast(&sleepData);
     //If the thread was still in the sleeping list, it was woken up by a wakeup()
     return removed ? TimedWaitResult::NoTimeout : TimedWaitResult::Timeout;

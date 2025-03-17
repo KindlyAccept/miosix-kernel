@@ -37,7 +37,7 @@ volatile int kernelRunning=0;
 
 /// This is used by globalIrqLock() and globalIrqUnlock() to allow nested
 /// calls to these functions.
-unsigned char interruptDisableNesting=0;
+unsigned char globalLockNesting=0;
 
 #ifdef WITH_SMP
 unsigned char globalIntrNestLockHoldingCore=0xff;
@@ -61,30 +61,30 @@ void globalIrqLock() noexcept
     unsigned char state=globalIntrNestLockHoldingCore;
     if(state==getCurrentCoreId())
     {
-        if(interruptDisableNesting==0xff) errorHandler(NESTING_OVERFLOW);
-        interruptDisableNesting++;
+        if(globalLockNesting==0xff) errorHandler(NESTING_OVERFLOW);
+        globalLockNesting++;
     } else {
         fastGlobalIrqLock();
         globalIntrNestLockHoldingCore=getCurrentCoreId();
-        if(interruptDisableNesting!=0) errorHandler(DISABLE_INTERRUPTS_NESTING);
-        interruptDisableNesting=1;
+        if(globalLockNesting!=0) errorHandler(DISABLE_INTERRUPTS_NESTING);
+        globalLockNesting=1;
     }
     #else //WITH_SMP
     fastGlobalIrqLock();
-    if(interruptDisableNesting==0xff) errorHandler(NESTING_OVERFLOW);
-    interruptDisableNesting++;
+    if(globalLockNesting==0xff) errorHandler(NESTING_OVERFLOW);
+    globalLockNesting++;
     #endif //WITH_SMP
 }
 
 void globalIrqUnlock() noexcept
 {
-    if(interruptDisableNesting==0)
+    if(globalLockNesting==0)
     {
         //Bad, globalIrqUnlock was called one time more than globalIrqLock
         errorHandler(GLOBAL_LOCK_NESTING);
     }
-    interruptDisableNesting--;
-    if(interruptDisableNesting==0)
+    globalLockNesting--;
+    if(globalLockNesting==0)
     {
         #ifdef WITH_SMP
         globalIntrNestLockHoldingCore=0xFF;
@@ -113,9 +113,9 @@ void restartKernel() noexcept
     int old=atomicAddExchange(&kernelRunning,-1);
     if(old<=0) errorHandler(PAUSE_KERNEL_NESTING);
     
-    //Check interruptDisableNesting to allow pauseKernel() while interrupts
+    //Check globalLockNesting to allow pauseKernel() while interrupts
     //are disabled with a GlobalIrqLock
-    if(interruptDisableNesting==0)
+    if(globalLockNesting==0)
     {
         //If we missed a preemption yield immediately. This mechanism works the
         //same way as the hardware implementation of interrupts that remain
