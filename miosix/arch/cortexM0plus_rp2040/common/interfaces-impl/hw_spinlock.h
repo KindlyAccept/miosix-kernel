@@ -54,14 +54,14 @@ public:
     FastHwSpinLock()
     {
         prevState=areInterruptsEnabled();
-        fastIrqLock();
+        fastDisableIrq();
         IRQhwSpinlockAcquire(Id);
     }
 
     ~FastHwSpinLock()
     {
         IRQhwSpinlockRelease(Id);
-        if(prevState) fastIrqUnlock();
+        if(prevState) fastEnableIrq();
     }
 
     FastHwSpinLock(const FastHwSpinLock&)=delete;

@@ -38,7 +38,7 @@ void errorHandler(Error e)
     // interrupt routine, and disabling interrupts within an interrupt
     // routine must be avoided.
     bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastIrqLock(); //FIXME: think about what happens in the multi-core case
+    if(interrupts) fastDisableIrq(); //FIXME: think about what happens in the multi-core case
 
     //Recoverable errors: None
     
@@ -78,7 +78,7 @@ void errorHandler(Error e)
     }
     IRQsystemReboot();
 
-    //if(interrupts) fastIrqUnlock(); // Not needed since no recoverable errors
+    //if(interrupts) fastEnableIrq(); // Not needed since no recoverable errors
 }
 
 } //namespace miosix

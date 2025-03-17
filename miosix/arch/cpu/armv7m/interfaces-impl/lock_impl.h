@@ -29,14 +29,14 @@
 
 namespace miosix {
 
-inline void fastIrqLock() noexcept
+inline void fastDisableIrq() noexcept
 {
     //Since this function is inline there's the need for a memory barrier to
     //avoid aggressive reordering
     asm volatile("cpsid i":::"memory");
 }
 
-inline void fastIrqUnlock() noexcept
+inline void fastEnableIrq() noexcept
 {
     //Since this function is inline there's the need for a memory barrier to
     //avoid aggressive reordering

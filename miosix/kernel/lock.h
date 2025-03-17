@@ -117,8 +117,8 @@ public:
 };
 
 //Forward declarations, these are commented below
-inline void fastIrqLock() noexcept;
-inline void fastIrqUnlock() noexcept;
+inline void fastDisableIrq() noexcept;
+inline void fastEnableIrq() noexcept;
 inline void fastGlobalLockFromIrq() noexcept;
 inline void fastGlobalUnlockFromIrq() noexcept;
 
@@ -141,7 +141,7 @@ inline void fastGlobalUnlockFromIrq() noexcept;
  */
 inline void fastGlobalIrqLock() noexcept
 {
-    fastIrqLock();
+    fastDisableIrq();
     fastGlobalLockFromIrq();
 }
 
@@ -151,7 +151,7 @@ inline void fastGlobalIrqLock() noexcept
 inline void fastGlobalIrqUnlock() noexcept
 {
     fastGlobalUnlockFromIrq();
-    fastIrqUnlock();
+    fastEnableIrq();
 }
 
 /**
@@ -444,12 +444,12 @@ public:
  * If you're trying to use this for driver development maybe you're looking for
  * fastGlobalIrqLock()?
  */
-inline void fastIrqLock() noexcept;
+inline void fastDisableIrq() noexcept;
 
 /**
  * \internal
  * Enable back interrupts on the core it was called from, after they have been
- * disabled by a call to fastIrqLock().
+ * disabled by a call to fastDisableIrq().
  *
  * This is currently meant to be an implementation detail used to implement the
  * global lock and we don't expect it to be useful for other uses, that's why
@@ -458,7 +458,7 @@ inline void fastIrqLock() noexcept;
  * If you're trying to use this for driver development maybe you're looking for
  * fastGlobalIrqUnlock()?
  */
-inline void fastIrqUnlock() noexcept;
+inline void fastEnableIrq() noexcept;
 
 /**
  * \internal
