@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2025 by Terraneo Federico                               *
+ *   Copyright (C) 2008-2025 by Terraneo Federico                          *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -41,7 +41,7 @@ unsigned char interruptDisableNesting=0;
 
 #ifdef WITH_SMP
 unsigned char globalIntrNestLockHoldingCore=0xff;
-#endif
+#endif //WITH_SMP
 
 ///\internal true if a thread wakeup occurs while the kernel is paused
 volatile bool pendingWakeup=false;
@@ -50,33 +50,33 @@ volatile bool pendingWakeup=false;
 ///  This variable is used to keep count of how many peripherals are actually used.
 /// If it 0 then the system can enter the deep sleep state
 static int deepSleepCounter=0;
-#endif // WITH_DEEP_SLEEP
+#endif //WITH_DEEP_SLEEP
 
 //Variables shared with kernel.cpp for performance and encapsulation reasons
 extern bool kernelStarted;
 
-void disableInterrupts()
+void globalIrqLock() noexcept
 {
-#ifdef WITH_SMP
+    #ifdef WITH_SMP
     unsigned char state=globalIntrNestLockHoldingCore;
     if(state==getCurrentCoreId())
     {
         if(interruptDisableNesting==0xff) errorHandler(NESTING_OVERFLOW);
         interruptDisableNesting++;
     } else {
-        globalInterruptDisableLock();
+        fastGlobalIrqLock();
         globalIntrNestLockHoldingCore=getCurrentCoreId();
         if(interruptDisableNesting!=0) errorHandler(DISABLE_INTERRUPTS_NESTING);
         interruptDisableNesting=1;
     }
-#else
-    globalInterruptDisableLock();
+    #else //WITH_SMP
+    fastGlobalIrqLock();
     if(interruptDisableNesting==0xff) errorHandler(NESTING_OVERFLOW);
     interruptDisableNesting++;
-#endif
+    #endif //WITH_SMP
 }
 
-void enableInterrupts()
+void globalIrqUnlock() noexcept
 {
     if(interruptDisableNesting==0)
     {
@@ -86,26 +86,29 @@ void enableInterrupts()
     interruptDisableNesting--;
     if(interruptDisableNesting==0)
     {
-    #ifdef WITH_SMP
+        #ifdef WITH_SMP
         globalIntrNestLockHoldingCore=0xFF;
-    #endif
-        // HACK: During startup, the C++ constructors will be invoked before
-        // the kernel is fully initialized. This process will take the
-        // interruptLock and release it, but as the kernel is still not fully
-        // up we do not want to actually disable interrupts. So only
-        // enable interrupts if the kernel is already started.
-        if(kernelStarted==true) globalInterruptEnableUnlock();
-        else IRQglobalInterruptUnlock();
+        #endif //WITH_SMP
+        // This function must be safe to call even at the early boot stage
+        // before the kernel is fully initialized. Thus, code will take the
+        // lock and release it, but we do not want to enable interrupts
+        if(kernelStarted==true) fastGlobalIrqUnlock();
+        else {
+            //We must not enable interrupts since we're in the boot stage where
+            //interrupts should be disabled, but we need to release the spinlock
+            //and this can be done with the irq-context unlock call
+            fastGlobalUnlockFromIrq();
+        }
     }
 }
 
-void pauseKernel()
+void pauseKernel() noexcept
 {
     int old=atomicAddExchange(&kernelRunning,1);
     if(old>=0xff) errorHandler(NESTING_OVERFLOW);
 }
 
-void restartKernel()
+void restartKernel() noexcept
 {
     int old=atomicAddExchange(&kernelRunning,-1);
     if(old<=0) errorHandler(PAUSE_KERNEL_NESTING);
@@ -136,18 +139,18 @@ void restartKernel()
     }
 }
 
-void deepSleepLock()
+void deepSleepLock() noexcept
 {
     #ifdef WITH_DEEP_SLEEP
     atomicAdd(&deepSleepCounter,1);
-    #endif // WITH_DEEP_SLEEP
+    #endif //WITH_DEEP_SLEEP
 }
 
-void deepSleepUnlock()
+void deepSleepUnlock() noexcept
 {
     #ifdef WITH_DEEP_SLEEP
     atomicAdd(&deepSleepCounter,-1);
-    #endif // WITH_DEEP_SLEEP
+    #endif //WITH_DEEP_SLEEP
 }
 
 } //namespace miosix

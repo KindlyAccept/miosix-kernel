@@ -1379,7 +1379,7 @@ long int sysconf(int query)
     {
         case _SC_NPROCESSORS_CONF:
         case _SC_NPROCESSORS_ONLN:
-            return 1;
+            return miosix::CPU_NUM_CORES;
         case _SC_HOST_NAME_MAX:
             return hostnameMax;
         case _SC_THREAD_STACK_MIN:

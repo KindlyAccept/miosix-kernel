@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2008-2024 by Terraneo Federico                          *
+ *   Copyright (C) 2010-2025 by Terraneo Federico                          *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -29,15 +29,26 @@
 
 namespace miosix {
 
-/**
- * \addtogroup Interfaces
- * \{
- */
+inline void fastIrqLock() noexcept
+{
+    //Since this function is inline there's the need for a memory barrier to
+    //avoid aggressive reordering
+    asm volatile("cpsid i":::"memory");
+}
 
-//This architecture has no inerrupt priorities
+inline void fastIrqUnlock() noexcept
+{
+    //Since this function is inline there's the need for a memory barrier to
+    //avoid aggressive reordering
+    asm volatile("cpsie i":::"memory");
+}
 
-/**
- * \}
- */
+inline bool areInterruptsEnabled() noexcept
+{
+    int i;
+    asm volatile("mrs   %0, primask    \n\t":"=r"(i));
+    if(i!=0) return false;
+    return true;
+}
 
 } //namespace miosix

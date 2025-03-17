@@ -33,6 +33,7 @@ namespace miosix {
 
 const unsigned char CPU_NUM_CORES=2;
 
+//TODO: move elsewhere?
 inline unsigned char getCurrentCoreId()
 {
     return get_core_num();

@@ -29,15 +29,32 @@
 
 namespace miosix {
 
-/**
- * \addtogroup Interfaces
- * \{
- */
+inline void fastIrqLock() noexcept
+{
+    //Since this function is inline there's the need for a memory barrier to
+    //avoid aggressive reordering
+    asm volatile(".set  I_BIT, 0x80     \n\t"
+                 "mrs r0, cpsr          \n\t"
+                 "orr r0, r0, #I_BIT    \n\t"
+                 "msr cpsr_c, r0        \n\t":::"r0", "memory");
+}
 
-//This architecture has no inerrupt priorities
+inline void fastIrqUnlock() noexcept
+{
+    //Since this function is inline there's the need for a memory barrier to
+    //avoid aggressive reordering
+    asm volatile(".set  I_BIT, 0x80     \n\t"
+                 "mrs r0, cpsr          \n\t"
+                 "and r0, r0, #~(I_BIT) \n\t"
+                 "msr cpsr_c, r0        \n\t":::"r0", "memory");
+}
 
-/**
- * \}
- */
+inline bool areInterruptsEnabled() noexcept
+{
+    int i;
+    asm volatile("mrs %0, cpsr	":"=r" (i));
+    if(i & 0x80) return false;
+    return true;
+}
 
 } //namespace miosix

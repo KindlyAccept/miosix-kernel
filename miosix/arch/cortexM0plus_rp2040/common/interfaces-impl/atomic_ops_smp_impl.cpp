@@ -26,39 +26,13 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include "interfaces/arch_registers.h"
 #include "hw_spinlock.h"
 
 namespace miosix {
 
-template <unsigned char Id>
-class FastHwSpinlock
-{
-public:
-    FastHwSpinlock()
-    {
-        oldInterruptsDisabled=__get_PRIMASK();
-        __disable_irq();
-        IRQhwSpinlockAcquire(Id);
-    }
+using AtomicsLock = FastHwSpinLock<RP2040HwSpinlocks::Atomics>;
 
-    ~FastHwSpinlock()
-    {
-        IRQhwSpinlockRelease(Id);
-        if(!oldInterruptsDisabled) __enable_irq();
-    }
-
-private:
-    bool oldInterruptsDisabled;
-
-    //Unwanted methods
-    FastHwSpinlock(const FastHwSpinlock& l);
-    FastHwSpinlock& operator= (const FastHwSpinlock& l);
-};
-
-using AtomicsLock = FastHwSpinlock<RP2040HwSpinlocks::Atomics>;
-
-int _atomicSwapImpl(volatile int *p, int v)
+int atomicSwapImpl(volatile int *p, int v)
 {
     int result;
     {
@@ -70,7 +44,7 @@ int _atomicSwapImpl(volatile int *p, int v)
     return result;
 }
 
-void _atomicAddImpl(volatile int *p, int incr)
+void atomicAddImpl(volatile int *p, int incr)
 {
     {
         AtomicsLock lock;
@@ -79,7 +53,7 @@ void _atomicAddImpl(volatile int *p, int incr)
     asm volatile("":::"memory");
 }
 
-int _atomicAddExchangeImpl(volatile int *p, int incr)
+int atomicAddExchangeImpl(volatile int *p, int incr)
 {
     int result;
     {
@@ -91,7 +65,7 @@ int _atomicAddExchangeImpl(volatile int *p, int incr)
     return result;
 }
 
-int _atomicCompareAndSwapImpl(volatile int *p, int prev, int next)
+int atomicCompareAndSwapImpl(volatile int *p, int prev, int next)
 {
     int result;
     {
@@ -103,8 +77,7 @@ int _atomicCompareAndSwapImpl(volatile int *p, int prev, int next)
     return result;
 }
 
-void *_atomicFetchAndIncrementImpl(void * const volatile * p, int offset,
-        int incr)
+void *atomicFetchAndIncrementImpl(void * const volatile * p, int offset, int incr)
 {
     void *result;
     {

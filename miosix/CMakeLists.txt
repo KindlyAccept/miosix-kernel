@@ -56,6 +56,7 @@ message(STATUS
 
 set(MIOSIX_KERNEL_SRC
     ${MIOSIX_KPATH}/kernel/kernel.cpp
+    ${MIOSIX_KPATH}/kernel/lock.cpp
     ${MIOSIX_KPATH}/kernel/sync.cpp
     ${MIOSIX_KPATH}/kernel/error.cpp
     ${MIOSIX_KPATH}/kernel/pthread.cpp

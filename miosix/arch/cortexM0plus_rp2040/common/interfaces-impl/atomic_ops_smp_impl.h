@@ -31,43 +31,44 @@
 /**
  * Cortex M0/M0+ architectures does not support __LDREXW, __STREXW and __CLREX
  * instructions, so we have to redefine the atomic operations using functions
- * that disable the interrupts.
+ * that disable the interrupts and take a spinlock to prevent multicore race
+ * conditions.
  * 
  * TODO: actually this implementation is not very efficient
  */
 
 namespace miosix {
 
-int _atomicSwapImpl(volatile int *p, int v);
-void _atomicAddImpl(volatile int *p, int incr);
-int _atomicAddExchangeImpl(volatile int *p, int incr);
-int _atomicCompareAndSwapImpl(volatile int *p, int prev, int next);
-void *_atomicFetchAndIncrementImpl(void *const volatile *p,int offset,int incr);
+int atomicSwapImpl(volatile int *p, int v);
+void atomicAddImpl(volatile int *p, int incr);
+int atomicAddExchangeImpl(volatile int *p, int incr);
+int atomicCompareAndSwapImpl(volatile int *p, int prev, int next);
+void *atomicFetchAndIncrementImpl(void *const volatile *p,int offset,int incr);
 
 inline int atomicSwap(volatile int *p, int v)
 {
-    return _atomicSwapImpl(p,v);
+    return atomicSwapImpl(p,v);
 }
 
 inline void atomicAdd(volatile int *p, int incr)
 {
-    _atomicAddImpl(p,incr);
+    atomicAddImpl(p,incr);
 }
 
 inline int atomicAddExchange(volatile int *p, int incr)
 {
-    return _atomicAddExchangeImpl(p,incr);
+    return atomicAddExchangeImpl(p,incr);
 }
 
 inline int atomicCompareAndSwap(volatile int *p, int prev, int next)
 {
-    return _atomicCompareAndSwapImpl(p,prev,next);
+    return atomicCompareAndSwapImpl(p,prev,next);
 }
 
 inline void *atomicFetchAndIncrement(void * const volatile * p, int offset,
-        int incr)
+    int incr)
 {
-    return _atomicFetchAndIncrementImpl(p,offset,incr);
+    return atomicFetchAndIncrementImpl(p,offset,incr);
 }
 
 } //namespace miosix

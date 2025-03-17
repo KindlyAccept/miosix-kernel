@@ -27,11 +27,48 @@
 
 #pragma once
 
-#include "interfaces/arch_registers.h"
+#include "interfaces-impl/lock_impl.h"
 
 namespace miosix {
 
 void IRQhwSpinlockAcquire(unsigned char i) noexcept;
 void IRQhwSpinlockRelease(unsigned char i) noexcept;
 
-}
+// Definition of statically allocated spinlocks
+struct RP2040HwSpinlocks
+{
+    enum
+    {
+        GIL = 0,        // Global interrupt lock
+        Atomics,        // Mutual exclusion of atomic operations
+        InitCoreSync,   // Used at the end of SMP setup to synchronize the cores
+        FirstFree,
+        Last = 32
+    };
+};
+
+template <unsigned char Id>
+class FastHwSpinLock
+{
+public:
+    FastHwSpinLock()
+    {
+        prevState=areInterruptsEnabled();
+        fastIrqLock();
+        IRQhwSpinlockAcquire(Id);
+    }
+
+    ~FastHwSpinLock()
+    {
+        IRQhwSpinlockRelease(Id);
+        if(prevState) fastIrqUnlock();
+    }
+
+    FastHwSpinLock(const FastHwSpinLock&)=delete;
+    FastHwSpinLock& operator= (const FastHwSpinLock&)=delete;
+
+private:
+    bool prevState;
+};
+
+} //namespace miosix

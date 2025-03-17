@@ -36,33 +36,6 @@ namespace miosix {
  * \{
  */
 
-inline void fastDisableInterrupts() noexcept
-{
-    // Documentation says __disable_irq() disables all interrupts with
-    // configurable priority, so also SysTick and SVC.
-    // No need to disable faults with __disable_fault_irq()
-    __disable_irq();
-    //The new fastDisableInterrupts/fastEnableInterrupts are inline, so there's
-    //the need for a memory barrier to avoid aggressive reordering
-    asm volatile("":::"memory");
-}
-
-inline void fastEnableInterrupts() noexcept
-{
-    __enable_irq();
-    //The new fastDisableInterrupts/fastEnableInterrupts are inline, so there's
-    //the need for a memory barrier to avoid aggressive reordering
-    asm volatile("":::"memory");
-}
-
-inline bool areInterruptsEnabled() noexcept
-{
-    int i;
-    asm volatile("mrs   %0, primask    \n\t":"=r"(i));
-    if(i!=0) return false;
-    return true;
-}
-
 #ifndef __NVIC_PRIO_BITS
 #error "__NVIC_PRIO_BITS undefined"
 #endif //__NVIC_PRIO_BITS
