@@ -118,14 +118,8 @@ ssize_t EFM32Serial::readBlock(void *buffer, size_t size, off_t where)
         //This is required for \n detection
         if(result>0) break; 
         //Wait for data in the queue
-        do {
-            rxWaiting=Thread::IRQgetCurrentThread();
-            Thread::IRQwait();
-            {
-                FastGlobalIrqUnlock eLock(dLock);
-                Thread::yield();
-            }
-        } while(rxWaiting);
+        rxWaiting=Thread::IRQgetCurrentThread();
+        do Thread::IRQenableIrqAndWait(dLock); while(rxWaiting);
     }
     return result;
 }

@@ -97,14 +97,8 @@ ssize_t ATSAMSerial::readBlock(void *buffer, size_t size, off_t where)
         if(idle && result>0) break;
         if(result==size) break;
         //Wait for data in the queue
-        do {
-            rxWaiting=Thread::IRQgetCurrentThread();
-            Thread::IRQwait();
-            {
-                FastGlobalIrqUnlock eLock(dLock);
-                Thread::yield();
-            }
-        } while(rxWaiting);
+        rxWaiting=Thread::IRQgetCurrentThread();
+        do Thread::IRQenableIrqAndWait(dLock); while(rxWaiting);
     }
     return result;
 }

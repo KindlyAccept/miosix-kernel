@@ -317,7 +317,7 @@ unsigned int SynchronizedServo::getPrescalerInputFrequency()
 void SynchronizedServo::IRQwaitForTimerOverflow(FastGlobalIrqLock& dLock)
 {
     waiting=Thread::IRQgetCurrentThread();
-    while(waiting) Thread::IRQenableIrqAndWait(dLock);
+    do Thread::IRQenableIrqAndWait(dLock); while(waiting);
 }
 
 void SynchronizedServo::interruptHandler()

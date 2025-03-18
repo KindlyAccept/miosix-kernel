@@ -117,16 +117,10 @@ static WaitResult waitImpl(long long value, bool eventSensitive)
         RTC->IEN &= ~RTC_IEN_COMP0;
         return WaitResult::WAKEUP_IN_THE_PAST;
     }
-    
-    do {
-        rtcWaiting=Thread::IRQgetCurrentThread();
-        Thread::IRQwait();
-        {
-            FastGlobalIrqUnlock eLock(dLock);
-            Thread::yield();
-        }
-        //The readRtc() check in the while is for waits past one RTC period
-    } while(rtcWaiting && value>IRQreadRtc());
+
+    //The readRtc() check in the while is for waits past one RTC period
+    rtcWaiting=Thread::IRQgetCurrentThread();
+    do Thread::IRQenableIrqAndWait(dLock); while(rtcWaiting && value>IRQreadRtc());
     RTC->IEN &= ~RTC_IEN_COMP0;
     if(eventSensitive)
     {

@@ -754,20 +754,12 @@ static bool multipleBlockRead(unsigned char *buffer, unsigned int nblk,
         //Block size 512 bytes, block data xfer, from card to controller
         SDMMC->DCTRL=(9<<4) | SDMMC_DCTRL_DTDIR | SDMMC_DCTRL_DTEN;
         FastGlobalIrqLock dLock;
-        while(waiting)
-        {
-            Thread::IRQwait();
-            {
-                FastGlobalIrqUnlock eLock(dLock);
-                Thread::yield();
-            }
-        }
+        while(waiting) Thread::IRQenableIrqAndWait(dLock);
 
         // This while has been benchmarked and it runs for less then 200 ns for
         // every read issued. It is needed to wait for the IDMA transfer complete 
         // after the wakeup to confirm that the data is consistent.
-        while(SDMMC->STA & SDMMC_STA_IDMABTC)
-            ;
+        while(SDMMC->STA & SDMMC_STA_IDMABTC) ;
         
     } else transferError=true;
   
@@ -850,14 +842,7 @@ static bool multipleBlockWrite(const unsigned char *buffer, unsigned int nblk,
         //Block size 512 bytes, block data xfer, from card to controller
         SDMMC->DCTRL=(9<<4) | SDMMC_DCTRL_DTEN;
         FastGlobalIrqLock dLock;
-        while(waiting)
-        {
-            Thread::IRQwait();
-            {
-                FastGlobalIrqUnlock eLock(dLock);
-                Thread::yield();
-            }
-        }
+        while(waiting) Thread::IRQenableIrqAndWait(dLock);
     } else transferError=true;
     
     SDMMC->DCTRL=0; //Disable data path state machine

@@ -358,27 +358,17 @@ long long HRTB::IRQgetCurrentTickVht(){
     return IRQgetTickCorrectedVht();
 }
 
-Thread* HRTB::IRQgpioWait(long long tick,FastGlobalIrqLock *dLock){
-    do{
-        gpioWaiting=Thread::IRQgetCurrentThread();
-        Thread::IRQwait();
-        {
-            FastGlobalIrqUnlock eLock(*dLock);
-            Thread::yield();
-        }
-    }while(gpioWaiting && tick>IRQgetTick());
+Thread* HRTB::IRQgpioWait(long long tick,FastGlobalIrqLock *dLock)
+{
+    gpioWaiting=Thread::IRQgetCurrentThread();
+    do Thread::IRQenableIrqAndWait(*dLock); while(gpioWaiting && tick>IRQgetTick());
     return gpioWaiting;
 }
 
-Thread* HRTB::IRQtransceiverWait(long long tick,FastGlobalIrqLock *dLock){
-    do {
-        transceiverWaiting=Thread::IRQgetCurrentThread();
-        Thread::IRQwait();
-        {
-            FastGlobalIrqUnlock eLock(*dLock);
-            Thread::yield();
-        }
-    } while(transceiverWaiting && tick>IRQgetTick());
+Thread* HRTB::IRQtransceiverWait(long long tick,FastGlobalIrqLock *dLock)
+{
+    transceiverWaiting=Thread::IRQgetCurrentThread();
+    do Thread::IRQenableIrqAndWait(*dLock); while(transceiverWaiting && tick>IRQgetTick());
     return transceiverWaiting;
 }
 

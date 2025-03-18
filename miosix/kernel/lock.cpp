@@ -66,7 +66,7 @@ void globalIrqLock() noexcept
     } else {
         fastGlobalIrqLock();
         globalIntrNestLockHoldingCore=getCurrentCoreId();
-        if(globalLockNesting!=0) errorHandler(DISABLE_INTERRUPTS_NESTING);
+        if(globalLockNesting!=0) errorHandler(GLOBAL_LOCK_NESTING);
         globalLockNesting=1;
     }
     #else //WITH_SMP
@@ -87,7 +87,7 @@ void globalIrqUnlock() noexcept
     if(globalLockNesting==0)
     {
         #ifdef WITH_SMP
-        globalIntrNestLockHoldingCore=0xFF;
+        globalIntrNestLockHoldingCore=0xff;
         #endif //WITH_SMP
         // This function must be safe to call even at the early boot stage
         // before the kernel is fully initialized. Thus, code will take the
