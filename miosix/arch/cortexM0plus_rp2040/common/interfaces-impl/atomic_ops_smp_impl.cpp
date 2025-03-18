@@ -26,6 +26,10 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
+#include "config/miosix_settings.h"
+
+#ifdef WITH_SMP
+
 #include "hw_spinlock.h"
 
 namespace miosix {
@@ -92,3 +96,5 @@ void *atomicFetchAndIncrementImpl(void * const volatile * p, int offset, int inc
 }
 
 } //namespace miosix
+
+#endif //WITH_SMP

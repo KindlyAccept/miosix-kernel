@@ -26,6 +26,9 @@
  ***************************************************************************/
 
 #include "interfaces_private/smp.h"
+
+#ifdef WITH_SMP
+
 #include "interfaces_private/os_timer.h"
 #include "interfaces/arch_registers.h"
 #include "interfaces/cpu_const.h"
@@ -187,3 +190,5 @@ void IRQcallOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept
 }
 
 } // namespace miosix
+
+#endif //WITH_SMP

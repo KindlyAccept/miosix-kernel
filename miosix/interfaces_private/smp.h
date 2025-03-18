@@ -94,7 +94,7 @@ inline void callOnCore(unsigned char core, void (*f)(void *), void *arg) noexcep
     IRQcallOnCore(core,f,arg);
 }
 
-#endif
+#endif //WITH_SMP
 
 } // namespace miosix
 
