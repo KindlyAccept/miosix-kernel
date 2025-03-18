@@ -59,14 +59,6 @@ namespace miosix {
 void startKernel();
 
 /**
- * Return true if kernel is running, false if it is not started, or paused.<br>
- * Warning: disabling/enabling interrupts does not affect the result returned by
- * this function.
- * \return true if kernel is running (started && not paused)
- */
-bool isKernelRunning();
-
-/**
  * Returns OS time, which is a monotonic clock started when the OS booted.<br>
  * Warning! This function replaces the getTick() in previous versions of the
  * kernel, but unlike getTick(), getTime() cannot be called with interrupts

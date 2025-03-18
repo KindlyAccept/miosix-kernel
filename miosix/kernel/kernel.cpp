@@ -169,11 +169,6 @@ void startKernel()
     IRQportableStartKernel();
 }
 
-bool isKernelRunning()
-{
-    return (kernelRunning==0) && kernelStarted;
-}
-
 //These are not implemented here, but in the platform/board-specific os_timer.
 //long long getTime() noexcept
 //long long IRQgetTime() noexcept

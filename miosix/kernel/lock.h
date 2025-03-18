@@ -348,6 +348,17 @@ void pauseKernel() noexcept;
 void restartKernel() noexcept;
 
 /**
+ * Return true if kernel is running, false if it is not started (that is, we are
+ * so early in the boot process that the scheduler isn't running), or preemption
+ * is temporarily disabled by a call to pauseKernel.
+ *
+ * \note Acquiring the global lock or disabling interrupts does not affect the
+ * result returned by this function.
+ * \return true if kernel is running (started && not paused)
+ */
+bool isKernelRunning() noexcept;
+
+/**
  * This class is a RAII lock for pausing the kernel. This call avoids
  * the error of not restarting the kernel since it is done automatically.
  */

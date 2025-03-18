@@ -139,6 +139,11 @@ void restartKernel() noexcept
     }
 }
 
+bool isKernelRunning() noexcept
+{
+    return (kernelRunning==0) && kernelStarted;
+}
+
 void deepSleepLock() noexcept
 {
     #ifdef WITH_DEEP_SLEEP
