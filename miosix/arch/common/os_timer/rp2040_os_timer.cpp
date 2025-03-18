@@ -25,6 +25,7 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
+#include "config/miosix_settings.h"
 #include "kernel/thread.h"
 #include "interfaces/arch_registers.h"
 #include "interfaces/delays.h"
@@ -34,7 +35,11 @@
 namespace miosix {
 
 static TimeConversion tc(48000000);
-static long long lastAlarmTicks=0;
+#ifdef WITH_SMP
+static long long lastAlarmTicks[2]={0};
+#else
+static long long lastAlarmTicks[1]={0};
+#endif
 
 /**
  * \internal
@@ -59,18 +64,19 @@ static inline long long IRQgetTicks() noexcept
  * Handles the timer interrupt, checking if the alarm period is indeed
  * elapsed and calling the kernel if so.
  */
+template<unsigned char AlarmId>
 static void IRQtimerInterruptHandler()
 {
-    timer_hw->intr=TIMER_INTR_ALARM_0_BITS; //Bit is write-clear
-    auto t=IRQgetTicks();
+    timer_hw->intr=1<<AlarmId; //Bit is write-clear
+    auto tnow=IRQgetTicks(), twake=lastAlarmTicks[AlarmId];
     //Check the full 64 bits. If the alarm deadline has passed, call the kernel.
     //Otherwise rearm the timer. Rearming the timer is also important to prevent
     //a race condition that occurs when IRQosTimerSetInterrupt is called right
     //as the previously set alarm is about to trigger. In this case the previous
     //timer interrupt clears the armed flag thus the next interrupt set with
     //IRQosTimerSetInterrupt would not occur unless rearmed.
-    if(t>=lastAlarmTicks) IRQtimerInterrupt(tc.tick2ns(t));
-    else timer_hw->alarm[0]=static_cast<unsigned int>(lastAlarmTicks & 0xffffffff);
+    if(twake<=tnow) IRQtimerInterrupt(tc.tick2ns(tnow));
+    else timer_hw->alarm[AlarmId]=static_cast<unsigned int>(twake & 0xffffffff);
 }
 
 long long getTime() noexcept
@@ -94,9 +100,13 @@ void IRQosTimerInit()
     //Bring timer out of reset
     resets_hw->reset&= ~RESETS_RESET_TIMER_BITS;
     while((resets_hw->reset_done & RESETS_RESET_TIMER_BITS)==0) ;
-    //Enable timer interrupt
-    IRQregisterIrq(TIMER_IRQ_0_IRQn,IRQtimerInterruptHandler);
+    //Enable timer interrupt generation
+    #ifdef WITH_SMP
+    timer_hw->inte=TIMER_INTE_ALARM_0_BITS|TIMER_INTE_ALARM_1_BITS;
+    #else
     timer_hw->inte=TIMER_INTE_ALARM_0_BITS;
+    IRQregisterIrq(TIMER_IRQ_0_IRQn,IRQtimerInterruptHandler<0>);
+    #endif
     //Toggle debug sleep mode. Works around a bug where the timer does not
     //start counting if it was reset while it was paused due to debug mode.
     timer_hw->dbgpause=0;
@@ -104,9 +114,28 @@ void IRQosTimerInit()
     timer_hw->dbgpause=3;
 }
 
+#ifdef WITH_SMP
 /**
  * \internal
- * Set the next interrupt.
+ * Initialize the OS timer for a given core during SMP setup.
+ * This function is used by the kernel, and should not be used by end users, and
+ * is called by SMP setup code.
+ * On non-SMP platforms it is not called.
+ */
+void IRQosTimerInitSMP()
+{
+    if(getCurrentCoreId()==0)
+    {
+        IRQregisterIrq(TIMER_IRQ_0_IRQn,IRQtimerInterruptHandler<0>);
+    } else {
+        IRQregisterIrq(TIMER_IRQ_1_IRQn,IRQtimerInterruptHandler<1>);
+    }
+}
+#endif
+
+/**
+ * \internal
+ * Set the next interrupt on the current core.
  * It is used by the kernel, and should not be used by end users.
  * Can be called with interrupts disabled or within an interrupt.
  * The hardware timer handles only one outstading interrupt request at a
@@ -120,10 +149,16 @@ void IRQosTimerInit()
  */
 void IRQosTimerSetInterrupt(long long ns) noexcept
 {
-    lastAlarmTicks=tc.ns2tick(ns);
+    unsigned char core=getCurrentCoreId();
+    auto twake=tc.ns2tick(ns);
+    lastAlarmTicks[core]=twake;
     //Writing to the ALARM register also enables the timer
-    timer_hw->alarm[0]=static_cast<unsigned int>(lastAlarmTicks & 0xffffffff);
-    if(IRQgetTicks()>=lastAlarmTicks) NVIC_SetPendingIRQ(TIMER_IRQ_0_IRQn);
+    timer_hw->alarm[core]=static_cast<unsigned int>(twake & 0xffffffff);
+    if(twake<=IRQgetTicks())
+    {
+        if(core==0) NVIC_SetPendingIRQ(TIMER_IRQ_0_IRQn);
+        else NVIC_SetPendingIRQ(TIMER_IRQ_1_IRQn);
+    }
 }
 
 /**
@@ -146,13 +181,13 @@ void IRQosTimerSetTime(long long ns) noexcept
     timer_hw->pause=1;
     timer_hw->timelw=static_cast<unsigned int>(newTicks & 0xffffffff);
     timer_hw->timehw=static_cast<unsigned int>(newTicks>>32);
-    //Check if the time is advancing past the last alarm deadline set
-    if((timer_hw->armed & 0b0001) && newTicks>=lastAlarmTicks)
-    {
-        timer_hw->armed=0b0001; //Bit is write-clear
-        NVIC_SetPendingIRQ(TIMER_IRQ_0_IRQn);
-    }
     timer_hw->pause=0;
+    //Force a timer interrupt for all alarms currently configured. The timer
+    //interrupt handler will check if the alarm is true or not.
+    //With SMP enabled this may trigger an IRQ to another core, and this is why
+    //we are not simply setting the IRQ as pending in the NVIC.
+    //TODO: test me please!
+    timer_hw->intf=timer_hw->armed & 0x3;
 }
 
 /**

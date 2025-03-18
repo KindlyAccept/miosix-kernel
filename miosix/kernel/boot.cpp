@@ -110,6 +110,9 @@ void IRQkernelBootEntryPoint()
         if(areInterruptsEnabled()) errorHandler(INTERRUPTS_ENABLED_AT_BOOT);
         IRQbspInit();
         IRQosTimerInit();
+        #ifdef WITH_SMP
+        IRQosTimerInitSMP(); //TODO: temporary until multicore boot is properly done
+        #endif
         #ifdef WITH_DEEP_SLEEP
         IRQdeepSleepInit();
         #endif // WITH_DEEP_SLEEP

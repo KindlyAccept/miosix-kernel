@@ -26,6 +26,7 @@
  ***************************************************************************/
 
 #include "interfaces_private/smp.h"
+#include "interfaces_private/os_timer.h"
 #include "interfaces/arch_registers.h"
 #include "interfaces/cpu_const.h"
 #include "kernel/error.h"
@@ -119,6 +120,8 @@ __attribute__((noreturn)) void IRQcontinueInitCore1()
         NVIC_SetPriority(static_cast<IRQn_Type>(i),defaultIrqPriority);
     // Register IPI (FIFO) interrupt handler for core 1
     IRQregisterIrq(SIO_IRQ_PROC1_IRQn,IRQinterProcessorInterruptHandler);
+    // Register timer interrupt handler for core 1
+    IRQosTimerInitSMP();
     // Clear fifo status flags and pending interrupt flag to avoid spurious
     // interrupts on core 1 side
     sio_hw->fifo_st=0;
@@ -162,6 +165,8 @@ void IRQinitSMP(void *const stackPtrs[], void (*const mains[])(void *), void *co
     if (!fifoSend(arg)) errorHandler(UNEXPECTED);
     // Register IPI (FIFO) interrupt handler for core 0
     IRQregisterIrq(SIO_IRQ_PROC0_IRQn,IRQinterProcessorInterruptHandler);
+    // Register timer interrupt handler for core 0
+    IRQosTimerInitSMP();
     // Clear fifo status flags and pending interrupt flag to avoid spurious
     // interrupts on core 0 side
     sio_hw->fifo_st=0;

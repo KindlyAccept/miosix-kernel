@@ -70,7 +70,7 @@ void IRQinitSMP(void *const stackPtrs[], void (*const mains[])(void *), void *co
  * This function must be called while holding the global interrupt lock (GIL).
  * The function executed will also be run while holding the GIL. There is no
  * wait for the function to complete, except implicitly if the function runs
- * in the context of the same core where IRQcallOnCore() is executed
+ * in the context of the same core where IRQcallOnCore() is executed.
  * 
  * \param core The core ID where to execute the function.
  * \param f    The function to execute on the core.
@@ -82,7 +82,7 @@ void IRQcallOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept;
  * Executes a given function on a specific core within an interrupt context.
  * The function executed will be run while holding the GIL. There is no
  * wait for the function to complete, except implicitly if the function runs
- * in the context of the same core where callOnCore() is executed
+ * in the context of the same core where callOnCore() is executed.
  * 
  * \param core The core ID where to execute the function.
  * \param f    The function to execute on the core.

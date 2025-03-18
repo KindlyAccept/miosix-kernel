@@ -74,13 +74,25 @@ namespace miosix {
 /**
  * \internal
  * Initialize and start the os timer.
- * It is used by the kernel, and should not be used by end users.
+ * This function is used by the kernel, and should not be used by end users.
+ * On SMP platforms, this function is called early at boot on core 0.
  */
 void IRQosTimerInit();
 
+#ifdef WITH_SMP
 /**
  * \internal
- * Set the next interrupt.
+ * Initialize the OS timer for a given core during SMP setup.
+ * This function is used by the kernel, and should not be used by end users, and
+ * is called by SMP setup code.
+ * On non-SMP platforms it is not called.
+ */
+void IRQosTimerInitSMP();
+#endif
+
+/**
+ * \internal
+ * Set the next interrupt on the current core.
  * It is used by the kernel, and should not be used by end users.
  * Can be called with interrupts disabled or within an interrupt.
  * The hardware timer handles only one outstading interrupt request at a
