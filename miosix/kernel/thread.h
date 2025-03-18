@@ -238,7 +238,8 @@ public:
      * \param dLock the GlobalIrqLock object that was used to disable
      * interrupts in the current context.
      *
-     * \note This member function replaces IRQenableIrqAndWait() in Miosix v2.x
+     * \note This member function replaces IRQenableIrqAndWait() in Miosix v2.x,
+     * which in turn replaces IRQwait in older code
      */
     static void IRQglobalIrqUnlockAndWait(GlobalIrqLock& dLock)
     {
@@ -259,6 +260,7 @@ public:
      * interrupts in the current context.
      *
      * \note This member function replaces IRQenableIrqAndWait() in Miosix v2.x
+     * which in turn replaces IRQwait in older code
      */
     static void IRQglobalIrqUnlockAndWait(FastGlobalIrqLock& dLock)
     {

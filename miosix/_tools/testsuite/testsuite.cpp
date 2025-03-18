@@ -754,12 +754,13 @@ static void test_4()
 tests:
 Thread::wait
 Thread::wakeup
-Thread::IRQwait
+Thread::IRQglobalIrqUnlockAndWait
 Thread::IRQwakeup
 */
 
 static volatile bool t5_v1;
-static volatile bool t5_v2;//False=testing Thread::wait() else Thread::IRQwait()
+//False=testing Thread::wait() else Thread::IRQglobalIrqUnlockAndWait()
+static volatile bool t5_v2;
 
 static void t5_p1(void *argv)
 {
@@ -769,17 +770,15 @@ static void t5_p1(void *argv)
         t5_v1=true;
         if(t5_v2) Thread::wait();
         else {
-            globalIrqLock();
-            Thread::IRQwait();
-            globalIrqUnlock();
-            Thread::yield();
+            GlobalIrqLock dLock;
+            Thread::IRQglobalIrqUnlockAndWait(dLock);
         }
     }
 }
 
 static void test_5()
 {
-    test_name("wait, wakeup, IRQwait, IRQwakeup");
+    test_name("wait, wakeup, IRQglobalIrqUnlockAndWait, IRQwakeup");
     t5_v2=false;//Testing wait
     t5_v1=false;
     Thread *p=Thread::create(t5_p1,STACK_SMALL,0,NULL);
@@ -795,7 +794,7 @@ static void test_5()
         if(t5_v1==true) fail("Thread::wait");
     }
     t5_v1=false;
-    t5_v2=true;//Test IRQwait()
+    t5_v2=true;//Test IRQglobalIrqUnlockAndWait()
     p->wakeup();
     //Now that is still running, must update the variable
     Thread::sleep(5);
@@ -805,7 +804,7 @@ static void test_5()
     for(i=0;i<4;i++)
     {
         Thread::sleep(100);
-        if(t5_v1==true) fail("Thread::IRQwait");
+        if(t5_v1==true) fail("Thread::IRQglobalIrqUnlockAndWait");
     }
     globalIrqLock();
     p->IRQwakeup();
@@ -2549,11 +2548,7 @@ static void gbr(const char *&buffer, unsigned int& size)
     FastGlobalIrqLock dLock;
     while(bq.tryGetReadableBuffer(buffer,size)==false)
     {
-        Thread::IRQwait();
-        {
-            FastGlobalIrqUnlock eLock(dLock);
-            Thread::yield();
-        }
+        Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 }
 
