@@ -26,7 +26,7 @@
  ***************************************************************************/
 
 #include "error.h"
-#include "kernel.h"
+#include "lock.h"
 #include "interfaces/poweroff.h"
 #include "logging.h"
 

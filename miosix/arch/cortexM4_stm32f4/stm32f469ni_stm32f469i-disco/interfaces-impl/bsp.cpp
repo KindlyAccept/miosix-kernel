@@ -38,7 +38,7 @@
 #include <sys/ioctl.h>
 #include "interfaces/bsp.h"
 #include "interfaces_private/bsp_private.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "kernel/sync.h"
 #include "interfaces/delays.h"
 #include "interfaces/poweroff.h"

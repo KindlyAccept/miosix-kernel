@@ -26,7 +26,7 @@
  ***************************************************************************/
 
 #include "cpu_time_counter.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 
 #ifdef WITH_CPU_TIME_COUNTER
 

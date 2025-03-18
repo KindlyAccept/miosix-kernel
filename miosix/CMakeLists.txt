@@ -55,7 +55,7 @@ message(STATUS
         "   Remember to delete cmake cache for changes in CMakeLists.txt to have effect (or use --fresh to ignore it)")
 
 set(MIOSIX_KERNEL_SRC
-    ${MIOSIX_KPATH}/kernel/kernel.cpp
+    ${MIOSIX_KPATH}/kernel/thread.cpp
     ${MIOSIX_KPATH}/kernel/lock.cpp
     ${MIOSIX_KPATH}/kernel/sync.cpp
     ${MIOSIX_KPATH}/kernel/error.cpp

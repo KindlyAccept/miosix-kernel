@@ -33,7 +33,7 @@
 namespace miosix {
 
 //This is a function that is part of the internal implementation of the kernel
-//and is defined in kernel.cpp. User code should not know about these nor try to use them.
+//and is defined in thread.cpp. User code should not know about these nor try to use them.
 extern bool IRQwakeThreads(long long currentTime);///\internal Do not use outside the kernel
 
 /**

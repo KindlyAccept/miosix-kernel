@@ -30,7 +30,7 @@
 #include "config/miosix_settings.h"
 #include "control_scheduler_types.h"
 #include "parameters.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include <algorithm>
 
 #ifdef SCHED_TYPE_CONTROL_BASED

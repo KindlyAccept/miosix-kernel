@@ -26,7 +26,6 @@
  ***************************************************************************/ 
 
 #include "sync.h"
-#include "kernel.h"
 #include "error.h"
 #include "pthread_private.h"
 #include "kernel/scheduler/scheduler.h"

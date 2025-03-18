@@ -29,7 +29,7 @@
 
 #include "config/miosix_settings.h"
 #include "priority_scheduler_types.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 
 #ifdef SCHED_TYPE_PRIORITY
 

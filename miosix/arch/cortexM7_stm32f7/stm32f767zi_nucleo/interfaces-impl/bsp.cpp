@@ -47,7 +47,7 @@
 #include "interfaces/arch_registers.h"
 #include "interfaces/delays.h"
 #include "interfaces/poweroff.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "kernel/logging.h"
 #include "kernel/sync.h"
 

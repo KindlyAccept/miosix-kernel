@@ -35,7 +35,7 @@
 //// Console
 #include "kernel/logging.h"
 //// kernel interface
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 
 using namespace std;
 

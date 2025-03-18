@@ -29,8 +29,7 @@
 
 #include "config/miosix_settings.h"
 #include "edf_scheduler_types.h"
-#include "kernel/kernel.h"
-#include <list>
+#include "kernel/thread.h"
 
 #ifdef SCHED_TYPE_EDF
 

@@ -25,7 +25,7 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "interfaces/interrupts.h"
 #include "kernel/scheduler/timer_interrupt.h"
 #include "hrtb.h"

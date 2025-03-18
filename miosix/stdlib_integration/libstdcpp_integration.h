@@ -28,7 +28,7 @@
 #ifndef LIBSTDCPP_INTEGRATION_H
 #define	LIBSTDCPP_INTEGRATION_H
 
-//Can't yet make this header private, as it's included by kernel.h
+//Can't yet make this header private, as it's included by thread.h
 //#ifndef COMPILING_MIOSIX
 //#error "This is header is private, it can't be used outside Miosix itself."
 //#error "If your code depends on a private header, it IS broken."

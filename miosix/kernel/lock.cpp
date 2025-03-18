@@ -27,7 +27,7 @@
 
 #include "lock.h"
 #include "error.h"
-#include "kernel.h"
+#include "thread.h"
 #include "interfaces/atomic_ops.h"
 
 namespace miosix {
@@ -52,7 +52,7 @@ volatile bool pendingWakeup=false;
 static int deepSleepCounter=0;
 #endif //WITH_DEEP_SLEEP
 
-//Variables shared with kernel.cpp for performance and encapsulation reasons
+//Variables shared with thread.cpp for performance and encapsulation reasons
 extern bool kernelStarted;
 
 void globalIrqLock() noexcept

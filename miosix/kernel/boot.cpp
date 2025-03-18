@@ -34,7 +34,7 @@
 #include "interfaces_private/os_timer.h"
 #include "interfaces_private/sleep.h"
 // Miosix kernel
-#include "kernel.h"
+#include "thread.h"
 #include "filesystem/file_access.h"
 #include "error.h"
 #include "logging.h"

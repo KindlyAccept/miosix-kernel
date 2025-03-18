@@ -62,7 +62,7 @@
  * - saveContext() / restoreContext(), to perform context switches
  * - the schedulers, to set the newly running thread before a context switch
  * - IRQportableStartKernel(), to perform the first context switch
- * It is declared in kernel.cpp
+ * It is declared in thread.cpp
  */
 extern "C" {
 extern volatile unsigned int *ctxsave;

@@ -25,7 +25,7 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "interfaces/arch_registers.h"
 #include "interfaces/delays.h"
 #include "interfaces/interrupts.h"

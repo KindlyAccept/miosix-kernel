@@ -44,7 +44,7 @@
 //// Console
 #include "kernel/logging.h"
 //// kernel interface
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "kernel/process.h"
 #include "interfaces/bsp.h"
 #include "interfaces/poweroff.h"

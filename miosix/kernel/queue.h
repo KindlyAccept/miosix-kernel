@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "kernel.h"
+#include "thread.h"
 #include "error.h"
 
 namespace miosix {

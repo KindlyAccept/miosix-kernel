@@ -26,7 +26,7 @@
  ***************************************************************************/
 
 #include "interfaces_private/cpu.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 
 namespace miosix {
 

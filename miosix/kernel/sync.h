@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "kernel.h"
+#include "thread.h"
 #include "interfaces/interrupts.h"
 #include "intrusive.h"
 #include <vector>

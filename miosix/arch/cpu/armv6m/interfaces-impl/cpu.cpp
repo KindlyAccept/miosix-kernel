@@ -27,7 +27,7 @@
 
 #include "interfaces_private/cpu.h"
 #include "interfaces/arch_registers.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 
 namespace miosix {
 

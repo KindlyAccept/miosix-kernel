@@ -31,7 +31,7 @@
 #pragma once
 
 #include <pthread.h>
-#include "kernel.h"
+#include "thread.h"
 #include "intrusive.h"
 #include "sync.h"
 

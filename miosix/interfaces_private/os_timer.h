@@ -65,9 +65,9 @@
 namespace miosix {
 
 // The os timer platform-specific implementation shall provide these two
-// functions, although they are not declared here, but in kernel.h, as
+// functions, although they are not declared here, but in thread.h, as
 // these are the only two function that are meant to be called also from
-// application code. For comments about the intended behavior, see kernel.h
+// application code. For comments about the intended behavior, see thread.h
 //long long getTime() noexcept;
 //long long IRQgetTime() noexcept;
 

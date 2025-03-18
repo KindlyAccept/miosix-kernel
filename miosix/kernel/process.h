@@ -32,7 +32,7 @@
 #include <list>
 #include <set>
 #include <sys/types.h>
-#include "kernel.h"
+#include "thread.h"
 #include "sync.h"
 #include "elf_program.h"
 #include "config/miosix_settings.h"

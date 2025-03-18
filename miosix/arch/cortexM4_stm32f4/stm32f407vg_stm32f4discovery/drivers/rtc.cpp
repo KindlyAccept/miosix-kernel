@@ -28,12 +28,10 @@
 #include "rtc.h"
 #include <miosix.h>
 #include <sys/ioctl.h>
-#include <kernel/kernel.h>
 #include <kernel/logging.h>
 #include "interfaces/bsp.h"
 
 using namespace miosix;
-
 
 namespace miosix {
 

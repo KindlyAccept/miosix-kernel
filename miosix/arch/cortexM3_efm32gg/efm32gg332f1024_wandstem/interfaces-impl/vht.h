@@ -29,7 +29,7 @@
 #define VHT_H
 
 #include "hrtb.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "hrtb.h"
 #include "kernel/timeconversion.h"
 #include "gpio_timer.h"

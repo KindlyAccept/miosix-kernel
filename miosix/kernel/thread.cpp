@@ -25,7 +25,7 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/ 
 
-#include "kernel.h"
+#include "thread.h"
 #include "error.h"
 #include "logging.h"
 #include "sync.h"
@@ -61,9 +61,9 @@ volatile unsigned int *ctxsave;
 
 namespace miosix {
 
-//Global variables used by kernel.cpp. Those that are not static are also used
-//in portability.cpp and by the schedulers.
-//These variables MUST NOT be used outside kernel.cpp and portability.cpp
+//Global variables used by thread.cpp. Those that are not static are also used
+//in portability.cpp, lock.cpp and by the schedulers.
+//These variables MUST NOT be used outside of those files
 
 volatile Thread *runningThread=nullptr;///<\internal Thread currently running
 

@@ -38,7 +38,7 @@ using namespace std;
 
 namespace miosix {
 
-//These are defined in kernel.cpp
+//These are defined in thread.cpp
 extern volatile Thread *runningThread;
 extern volatile int kernelRunning;
 extern volatile bool pendingWakeup;

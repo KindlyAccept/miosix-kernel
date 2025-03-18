@@ -26,7 +26,7 @@
  ***************************************************************************/
 
 #include "lcd.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include <algorithm>
 
 using namespace std;

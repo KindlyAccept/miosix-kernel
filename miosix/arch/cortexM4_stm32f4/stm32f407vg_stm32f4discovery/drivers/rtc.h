@@ -31,11 +31,10 @@
  * and exposes its functionalities.
  ************************************************************************/
 
-#ifndef RTC_H
-#define RTC_H
+#pragma once
 
 #include <kernel/timeconversion.h>
-#include <kernel/kernel.h>
+#include <kernel/thread.h>
 
 namespace miosix {
 
@@ -130,5 +129,3 @@ private:
 };
 
 } //namespace miosix
-
-#endif //RTC_H

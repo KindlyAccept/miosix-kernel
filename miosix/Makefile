@@ -11,7 +11,7 @@ include $(KPATH)/Makefile.kcommon
 ## and that must be built for each architecture (both .c and .cpp)
 ## These files will end up in libmiosix.a
 SRC :=                                                                     \
-kernel/kernel.cpp                                                          \
+kernel/thread.cpp                                                          \
 kernel/lock.cpp                                                            \
 kernel/sync.cpp                                                            \
 kernel/error.cpp                                                           \

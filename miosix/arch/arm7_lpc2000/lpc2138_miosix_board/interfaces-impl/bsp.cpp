@@ -39,7 +39,7 @@
 #include "interfaces/delays.h"
 #include "drivers/serial.h"
 #include "drivers/sd_lpc2000.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "kernel/sync.h"
 #include "interfaces/poweroff.h"
 #include "config/miosix_settings.h"

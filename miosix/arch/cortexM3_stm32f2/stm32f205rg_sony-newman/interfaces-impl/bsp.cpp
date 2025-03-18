@@ -34,7 +34,7 @@
 #include <algorithm>
 #include "interfaces/bsp.h"
 #include "interfaces_private/bsp_private.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "interfaces/delays.h"
 #include "interfaces/arch_registers.h"
 #include "interfaces_private/os_timer.h"

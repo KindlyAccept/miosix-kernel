@@ -30,7 +30,7 @@
 #include "interfaces/arch_registers.h"
 #include "interfaces/interrupts.h"
 #include "interfaces/delays.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "board_settings.h" //For sdVoltage
 #include <cstdio>
 #include <cstring>

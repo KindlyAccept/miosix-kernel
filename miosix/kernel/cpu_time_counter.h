@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "kernel.h"
+#include "thread.h"
 #include "cpu_time_counter_types.h"
 
 #ifdef WITH_CPU_TIME_COUNTER

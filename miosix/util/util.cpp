@@ -32,7 +32,7 @@
 #include <cstdio>
 #include <malloc.h>
 #include "util.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "stdlib_integration/libc_integration.h"
 #include "config/miosix_settings.h" //For WATERMARK_FILL and STACK_FILL
 #include "interfaces/cpu_const.h"

@@ -5,7 +5,7 @@
 #include "interfaces/interrupts.h"
 #include "cache/cortexMx_cache.h"
 #include "interfaces/delays.h"
-#include "kernel/kernel.h"
+#include "kernel/thread.h"
 #include "board_settings.h" //For sdVoltage and SD_ONE_BIT_DATABUS definitions
 #include <cstdio>
 #include <cstring>
