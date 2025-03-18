@@ -47,18 +47,6 @@ namespace miosix {
  */
 
 /**
- * \internal
- * Start the kernel.<br> There is no way to stop the kernel once it is
- * started, except a (software or hardware) system reset.<br>
- * Calls errorHandler(OUT_OF_MEMORY) if there is no heap to create the idle
- * thread. If the function succeds in starting the kernel, it never returns;
- * otherwise it will call errorHandler(OUT_OF_MEMORY) and then return
- * immediately. startKernel() must not be called when the kernel is already
- * started.
- */
-void startKernel();
-
-/**
  * Returns OS time, which is a monotonic clock started when the OS booted.<br>
  * Warning! This function replaces the getTick() in previous versions of the
  * kernel, but unlike getTick(), getTime() cannot be called with interrupts

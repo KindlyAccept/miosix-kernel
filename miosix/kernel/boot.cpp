@@ -54,6 +54,9 @@ namespace miosix {
 ///<\internal Provided by the startup code
 void IRQinitIrqTable() noexcept;
 
+///<\internal Provided by thread.cpp
+void startKernel();
+
 /**
  * \internal
  * Calls C++ global constructors
