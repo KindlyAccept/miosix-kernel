@@ -72,7 +72,6 @@ enum class TimedWaitResult
 };
 
 //Forwrd declaration
-class SleepData;
 class MemoryProfiling;
 class Mutex;
 class ConditionVariable;

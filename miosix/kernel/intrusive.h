@@ -626,7 +626,7 @@ private:
 /**
  * \internal
  * Base class of IntrusiveList with the non-template-dependent part to improve
- * code size when instantiationg multiple IntrusiveLists
+ * code size when instantiating multiple IntrusiveLists
  */
 class IntrusiveListBase
 {
