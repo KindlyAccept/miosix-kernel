@@ -28,7 +28,6 @@ cmake_minimum_required(VERSION 3.16)
 project(BlinkingLED C CXX ASM)
 
 # Set Miosix definitions and options
-add_compile_definitions($<$<COMPILE_LANGUAGE:C,CXX>:MIOSIX_SKIP_SETTINGS_EDIT>)
 set(MIOSIX_OPT_BOARD rp2040_raspberry_pi_pico CACHE STRING "Target board")
 
 add_subdirectory(../.. miosix EXCLUDE_FROM_ALL)

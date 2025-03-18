@@ -28,7 +28,6 @@ cmake_minimum_required(VERSION 3.16)
 project(ProcessesExamples C CXX ASM)
 
 # Set Miosix definitions and options
-add_compile_definitions($<$<COMPILE_LANGUAGE:C,CXX>:MIOSIX_SKIP_SETTINGS_EDIT>)
 # add_compile_definitions($<$<COMPILE_LANGUAGE:C,CXX>:WITH_PROCESSES>)
 set(MIOSIX_OPT_BOARD stm32f767zi_nucleo CACHE STRING "Target board")
 set(MIOSIX_LINKER_SCRIPT stm32_2m+384k_ram_processes.ld CACHE FILEPATH "Linker script")
