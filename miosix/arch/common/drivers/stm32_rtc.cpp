@@ -110,7 +110,7 @@ bool IRQabsoluteWaitTick(long long tick, FastGlobalIrqLock& dLock)
     //thus not supported.
     if(IRQgetTick()>=tick-2) return true;
     waiting=Thread::IRQgetCurrentThread();
-    do Thread::IRQenableIrqAndWait(dLock); while(waiting);
+    do Thread::IRQglobalIrqUnlockAndWait(dLock); while(waiting);
     return false;
 }
 

@@ -147,7 +147,7 @@ ssize_t LPC2000Serial::readBlock(void *buffer, size_t size, off_t where)
         if(result==size) break;
         //Wait for data in the queue
         rxWaiting=Thread::IRQgetCurrentThread();
-        do Thread::IRQenableIrqAndWait(dLock); while(rxWaiting);
+        do Thread::IRQglobalIrqUnlockAndWait(dLock); while(rxWaiting);
     }
     return result;
 }
@@ -177,7 +177,7 @@ ssize_t LPC2000Serial::writeBlock(const void *buffer, size_t size, off_t where)
                 len--;
             } else {
                 txWaiting=Thread::IRQgetCurrentThread();
-                do Thread::IRQenableIrqAndWait(dLock); while(txWaiting);
+                do Thread::IRQglobalIrqUnlockAndWait(dLock); while(txWaiting);
             }
         }
     }

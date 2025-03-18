@@ -249,7 +249,7 @@ public:
      * Thread::yield(); //After this, thread is in wait status
      * \endcode
      *
-     * Consider using IRQenableIrqAndWait() instead.
+     * Consider using IRQglobalIrqUnlockAndWait() instead.
      */
     // static void IRQwait();
 
@@ -280,10 +280,10 @@ public:
      * \param dLock the GlobalIrqLock object that was used to disable
      * interrupts in the current context.
      */
-    static void IRQenableIrqAndWait(GlobalIrqLock& dLock)
+    static void IRQglobalIrqUnlockAndWait(GlobalIrqLock& dLock)
     {
         (void)dLock; //Common implementation doesn't need it
-        return IRQenableIrqAndWaitImpl();
+        return IRQglobalIrqUnlockAndWaitImpl();
     }
 
     /**
@@ -298,10 +298,10 @@ public:
      * \param dLock the FastGlobalIrqLock object that was used to disable
      * interrupts in the current context.
      */
-    static void IRQenableIrqAndWait(FastGlobalIrqLock& dLock)
+    static void IRQglobalIrqUnlockAndWait(FastGlobalIrqLock& dLock)
     {
         (void)dLock; //Common implementation doesn't need it
-        return IRQenableIrqAndWaitImpl();
+        return IRQglobalIrqUnlockAndWaitImpl();
     }
 
     /**
@@ -866,9 +866,9 @@ private:
     static void threadLauncher(void *(*threadfunc)(void*), void *argv);
 
     /**
-     * Common implementation of all IRQenableIrqAndWait calls
+     * Common implementation of all IRQglobalIrqUnlockAndWait calls
      */
-    static void IRQenableIrqAndWaitImpl();
+    static void IRQglobalIrqUnlockAndWaitImpl();
 
     /**
      * Common implementation of all timedWait calls

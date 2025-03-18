@@ -692,7 +692,7 @@ static bool multipleBlockRead(unsigned char *buffer, unsigned int nblk,
         SDMMC1->DCTRL=(9<<4) | SDMMC_DCTRL_DTDIR | SDMMC_DCTRL_DTEN;
         DBG("READ STARTED! WAITING FOR INTERRUPT...\n");
         FastGlobalIrqLock dLock;
-        while(waiting) Thread::IRQenableIrqAndWait(dLock);
+        while(waiting) Thread::IRQglobalIrqUnlockAndWait(dLock);
     } else {
         transferError=true;
         DBG("TRANSFER ERROR\n");
@@ -773,7 +773,7 @@ static bool multipleBlockWrite(const unsigned char *buffer, unsigned int nblk,
         //Block size 512 bytes, block data xfer, from card to controller
         SDMMC1->DCTRL= ((9<<4) | SDMMC_DCTRL_DTEN) & ~(SDMMC_DCTRL_DTDIR);
         FastGlobalIrqLock dLock;
-        while(waiting) Thread::IRQenableIrqAndWait(dLock);
+        while(waiting) Thread::IRQglobalIrqUnlockAndWait(dLock);
     } else transferError=true;
 
     // CMD12 is sent to end CMD25 (multiple block write), or to abort an

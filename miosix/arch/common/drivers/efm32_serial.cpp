@@ -119,7 +119,7 @@ ssize_t EFM32Serial::readBlock(void *buffer, size_t size, off_t where)
         if(result>0) break; 
         //Wait for data in the queue
         rxWaiting=Thread::IRQgetCurrentThread();
-        do Thread::IRQenableIrqAndWait(dLock); while(rxWaiting);
+        do Thread::IRQglobalIrqUnlockAndWait(dLock); while(rxWaiting);
     }
     return result;
 }

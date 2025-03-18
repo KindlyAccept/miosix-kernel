@@ -333,7 +333,7 @@ void Thread::PKrestartKernelAndWait(PauseKernelLock& dLock)
     FastGlobalIrqLock dLockIrq;
     auto savedNesting=kernelRunning;
     kernelRunning=0;
-    IRQenableIrqAndWaitImpl();
+    IRQglobalIrqUnlockAndWaitImpl();
     if(kernelRunning!=0) errorHandler(UNEXPECTED);
     kernelRunning=savedNesting;
 }
@@ -788,7 +788,7 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
     errorHandler(UNEXPECTED);
 }
 
-void Thread::IRQenableIrqAndWaitImpl()
+void Thread::IRQglobalIrqUnlockAndWaitImpl()
 {
     const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
     auto savedNesting=globalLockNesting; //For GlobalIrqLock

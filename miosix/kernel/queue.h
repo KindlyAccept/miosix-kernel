@@ -276,7 +276,7 @@ void QueueBase<T,BufferT>::put(const T& elem)
     while(IRQput(elem)==false)
     {
         waiting=Thread::IRQgetCurrentThread();
-        Thread::IRQenableIrqAndWait(dLock);
+        Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 }
 
@@ -286,7 +286,7 @@ void QueueBase<T,BufferT>::IRQputBlocking(const T& elem, FastGlobalIrqLock& dLoc
     while(IRQput(elem)==false)
     {
         waiting=Thread::IRQgetCurrentThread();
-        Thread::IRQenableIrqAndWait(dLock);
+        Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 }
 
@@ -297,7 +297,7 @@ void QueueBase<T,BufferT>::get(T& elem)
     while(IRQget(elem)==false)
     {
         waiting=Thread::IRQgetCurrentThread();
-        Thread::IRQenableIrqAndWait(dLock);
+        Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 }
 
@@ -307,7 +307,7 @@ void QueueBase<T,BufferT>::IRQgetBlocking(T& elem, FastGlobalIrqLock& dLock)
     while(IRQget(elem)==false)
     {
         waiting=Thread::IRQgetCurrentThread();
-        Thread::IRQenableIrqAndWait(dLock);
+        Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 }
 

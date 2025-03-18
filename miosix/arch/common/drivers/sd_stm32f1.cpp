@@ -1224,7 +1224,7 @@ static bool multipleBlockRead(unsigned int *buffer, unsigned int nblk,
         //Block size 512 bytes, block data xfer, from card to controller
         SDIO->DCTRL=(9<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTDIR | SDIO_DCTRL_DTEN;
         FastGlobalIrqLock dLock;
-        while(waiting) Thread::IRQenableIrqAndWait(dLock);
+        while(waiting) Thread::IRQglobalIrqUnlockAndWait(dLock);
     } else transferError=true;
     DMA2_Channel4->CCR=0;
     while(DMA2_Channel4->CCR & DMA_CCR_EN) ; //DMA may take time to stop
@@ -1311,7 +1311,7 @@ static bool multipleBlockWrite(const unsigned int *buffer, unsigned int nblk,
         //Block size 512 bytes, block data xfer, from card to controller
         SDIO->DCTRL=(9<<4) | SDIO_DCTRL_DMAEN | SDIO_DCTRL_DTEN;
         FastGlobalIrqLock dLock;
-        while(waiting) Thread::IRQenableIrqAndWait(dLock);
+        while(waiting) Thread::IRQglobalIrqUnlockAndWait(dLock);
     } else transferError=true;
     DMA2_Channel4->CCR=0;
     while(DMA2_Channel4->CCR & DMA_CCR_EN) ; //DMA may take time to stop

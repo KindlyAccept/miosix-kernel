@@ -736,7 +736,7 @@ void Transceiver::waitXosc()
     FastGlobalIrqLock dLock;
     waiting=Thread::IRQgetCurrentThread();
     IRQenableGpioIrq(misoPin);
-    do Thread::IRQenableIrqAndWait(dLock); while(waiting);
+    do Thread::IRQglobalIrqUnlockAndWait(dLock); while(waiting);
     IRQdisableGpioIrq(misoPin);
 }
 

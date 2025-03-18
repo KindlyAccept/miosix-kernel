@@ -120,7 +120,7 @@ static WaitResult waitImpl(long long value, bool eventSensitive)
 
     //The readRtc() check in the while is for waits past one RTC period
     rtcWaiting=Thread::IRQgetCurrentThread();
-    do Thread::IRQenableIrqAndWait(dLock); while(rtcWaiting && value>IRQreadRtc());
+    do Thread::IRQglobalIrqUnlockAndWait(dLock); while(rtcWaiting && value>IRQreadRtc());
     RTC->IEN &= ~RTC_IEN_COMP0;
     if(eventSensitive)
     {

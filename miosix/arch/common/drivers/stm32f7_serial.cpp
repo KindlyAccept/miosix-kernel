@@ -490,7 +490,7 @@ ssize_t STM32SerialBase::readFromRxQueue(void *buffer, size_t size)
         if(result==size) break;
         //Wait for data in the queue
         rxWaiting=Thread::IRQgetCurrentThread();
-        do Thread::IRQenableIrqAndWait(dLock); while(rxWaiting);
+        do Thread::IRQglobalIrqUnlockAndWait(dLock); while(rxWaiting);
     }
     return result;
 }
@@ -765,7 +765,7 @@ void STM32DMASerial::waitDmaWriteEnd()
     if(dmaTxInProgress)
     {
         txWaiting=Thread::IRQgetCurrentThread();
-        do Thread::IRQenableIrqAndWait(dLock); while(txWaiting);
+        do Thread::IRQglobalIrqUnlockAndWait(dLock); while(txWaiting);
     }
 }
 

@@ -77,7 +77,7 @@ static inline void IRQdoMutexLock(pthread_mutex_t *mutex, FastGlobalIrqLock& d)
     }
 
     //The while is necessary to protect against spurious wakeups
-    while(mutex->owner!=p) Thread::IRQenableIrqAndWait(d);
+    while(mutex->owner!=p) Thread::IRQglobalIrqUnlockAndWait(d);
 }
 
 /**
@@ -127,7 +127,7 @@ static inline void IRQdoMutexLockToDepth(pthread_mutex_t *mutex,
     }
 
     //The while is necessary to protect against spurious wakeups
-    while(mutex->owner!=p) Thread::IRQenableIrqAndWait(d);
+    while(mutex->owner!=p) Thread::IRQglobalIrqUnlockAndWait(d);
     if(mutex->recursive>=0) mutex->recursive=depth;
 }
 

@@ -165,7 +165,7 @@ template<typename T>
 static void atomicTestAndWaitUntil(volatile T& variable, T value)
 {
 	FastGlobalIrqLock dLock;
-	while(variable!=value) IRQenableIrqAndWait(dLock);
+	while(variable!=value) IRQglobalIrqUnlockAndWait(dLock);
 }
 
 /**
@@ -176,7 +176,7 @@ static unsigned short *getWritableBuffer()
 {
 	FastGlobalIrqLock dLock;
 	unsigned short *result;
-	while(bq->tryGetWritableBuffer(result)==false) IRQenableIrqAndWait(dLock);
+	while(bq->tryGetWritableBuffer(result)==false) IRQglobalIrqUnlockAndWait(dLock);
 	return result;
 }
 

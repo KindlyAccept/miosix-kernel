@@ -373,7 +373,7 @@ void ConditionVariable::wait(pthread_mutex_t *m)
     FastGlobalIrqLock dLock;
     unsigned int depth=IRQdoMutexUnlockAllDepthLevels(m);
     condList.push_back(&listItem); //Putting this thread last on the list (lifo policy)
-    Thread::IRQenableIrqAndWait(dLock);
+    Thread::IRQglobalIrqUnlockAndWait(dLock);
     condList.removeFast(&listItem); //In case of spurious wakeup
     IRQdoMutexLockToDepth(m,dLock,depth);
 }
@@ -503,7 +503,7 @@ void Semaphore::wait()
     //Otherwise put ourselves in queue and wait
     WaitToken listItem(Thread::IRQgetCurrentThread());
     fifo.push_back(&listItem); //Add entry to tail of list
-    while(listItem.thread) Thread::IRQenableIrqAndWait(dLock);
+    while(listItem.thread) Thread::IRQglobalIrqUnlockAndWait(dLock);
     //Spurious wakeup handled by while loop, listItem already removed from fifo
 }
 

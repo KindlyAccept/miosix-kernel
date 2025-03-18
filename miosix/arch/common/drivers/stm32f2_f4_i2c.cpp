@@ -130,7 +130,7 @@ bool I2C1Master::recv(unsigned char address, void *data, int len)
 
     {
         FastGlobalIrqLock dLock;
-        while(waiting) Thread::IRQenableIrqAndWait(dLock);
+        while(waiting) Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 
     DMA1_Stream7->CR=0;
@@ -174,7 +174,7 @@ bool I2C1Master::send(unsigned char address, const void *data, int len, bool sen
  
     {
         FastGlobalIrqLock dLock;
-        while(waiting) Thread::IRQenableIrqAndWait(dLock);
+        while(waiting) Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
     
     DMA1_Stream7->CR=0;
@@ -269,7 +269,7 @@ bool I2C1Master::waitStatus1()
     I2C1->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
     {
         FastGlobalIrqLock dLock;
-        while(waiting) Thread::IRQenableIrqAndWait(dLock);
+        while(waiting) Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
     I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
     return !error;

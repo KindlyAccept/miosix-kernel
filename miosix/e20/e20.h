@@ -201,7 +201,7 @@ void FixedEventQueueBase<SlotSize>::postImpl(Callback<SlotSize>& event,
         WaitToken w(Thread::IRQgetCurrentThread());
         waitingPut.push_back(&w);
         //w.thread must be set to nullptr to protect against spurious wakeups
-        while(w.thread) Thread::IRQenableIrqAndWait(dLock);
+        while(w.thread) Thread::IRQglobalIrqUnlockAndWait(dLock);
     }
 }
 
@@ -239,7 +239,7 @@ void FixedEventQueueBase<SlotSize>::runImpl(Callback<SlotSize> *events,
             WaitToken w(Thread::IRQgetCurrentThread());
             waitingGet.push_back(&w);
             //w.thread must be set to nullptr to protect against spurious wakeups
-            while(w.thread) Thread::IRQenableIrqAndWait(dLock);
+            while(w.thread) Thread::IRQglobalIrqUnlockAndWait(dLock);
         }
         Callback<SlotSize> f=events[get]; //This may allocate memory
         if(++get>=size) get=0;
