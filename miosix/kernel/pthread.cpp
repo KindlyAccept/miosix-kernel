@@ -81,7 +81,6 @@ int pthread_create(pthread_t *pthread, const pthread_attr_t *attr,
 int pthread_join(pthread_t pthread, void **value_ptr)
 {
     Thread *t=reinterpret_cast<Thread*>(pthread);
-    if(Thread::exists(t)==false) return ESRCH;
     if(t==Thread::getCurrentThread()) return EDEADLK;
     if(t->join(value_ptr)==false) return EINVAL;
     return 0;
@@ -90,7 +89,6 @@ int pthread_join(pthread_t pthread, void **value_ptr)
 int pthread_detach(pthread_t pthread)
 {
     Thread *t=reinterpret_cast<Thread*>(pthread);
-    if(Thread::exists(t)==false) return ESRCH;
     t->detach();
     return 0;
 }

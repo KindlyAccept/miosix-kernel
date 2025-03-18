@@ -455,6 +455,8 @@ bool Thread::testTerminate()
 void Thread::detach()
 {
     FastGlobalIrqLock lock;
+    if(this!=Thread::IRQgetCurrentThread() && Thread::IRQexists(this)==false)
+        return;
     this->flags.IRQsetDetached();
     
     //we detached a terminated thread, so its memory needs to be deallocated
