@@ -396,7 +396,7 @@ TimedWaitResult ConditionVariable::timedWait(pthread_mutex_t *m, long long absTi
     FastGlobalIrqLock dLock;
     unsigned int depth=IRQdoMutexUnlockAllDepthLevels(m);
     condList.push_back(&listItem); //Putting this thread last on the list (lifo policy)
-    auto result=Thread::IRQenableIrqAndTimedWait(dLock,absTime);
+    auto result=Thread::IRQglobalIrqUnlockAndTimedWait(dLock,absTime);
     condList.removeFast(&listItem); //In case of timeout or spurious wakeup
     IRQdoMutexLockToDepth(m,dLock,depth);
     return result;
@@ -522,7 +522,7 @@ TimedWaitResult Semaphore::timedWait(long long absTime)
     fifo.push_back(&listItem); //Add entry to tail of list
     while(listItem.thread)
     {
-        if(Thread::IRQenableIrqAndTimedWait(dLock,absTime)==TimedWaitResult::Timeout)
+        if(Thread::IRQglobalIrqUnlockAndTimedWait(dLock,absTime)==TimedWaitResult::Timeout)
         {
             fifo.removeFast(&listItem); //Remove fifo entry in case of timeout
             return TimedWaitResult::Timeout;

@@ -50,17 +50,23 @@ namespace miosix {
  * acquired the lock are disabled and an implementation-defined mechanism is
  * used to guarantee that only one core at a time can hold the global lock,
  * hence the global name.
+ *
+ * \note This function replaces the disableInterrupts() function in Miosix v2.x
  */
 void globalIrqLock() noexcept;
 
 /**
  * See the documentation for globalIrqLock()
+ *
+ * \note This function replaces the enableInterrupts() function in Miosix v2.x
  */
 void globalIrqUnlock() noexcept;
 
 /**
  * This class is a RAII lock for holding the global lock.
  * This class automatically releases the lock when it goes out of scope.
+ *
+ * \note This class replaces the InterruptDisableLock class in Miosix v2.x
  */
 class GlobalIrqLock
 {
@@ -96,6 +102,8 @@ public:
  * }
  * //Finally lock released
  * \endcode
+ *
+ * \note This class replaces the InterruptEnableLock class in Miosix v2.x
  */
 class GlobalIrqUnlock
 {
@@ -138,6 +146,8 @@ inline void fastGlobalUnlockFromIrq() noexcept;
  * acquired the lock are disabled and an implementation-defined mechanism is
  * used to guarantee that only one core at a time can hold the global lock,
  * hence the global name.
+ *
+ * \note This function replaces the fastDisableInterrupts() function in Miosix v2.x
  */
 inline void fastGlobalIrqLock() noexcept
 {
@@ -147,6 +157,8 @@ inline void fastGlobalIrqLock() noexcept
 
 /**
  * See the documentation for fastGlobalIrqLock()
+ *
+ * \note This function replaces the fastEnableInterrupts() function in Miosix v2.x
  */
 inline void fastGlobalIrqUnlock() noexcept
 {
@@ -157,6 +169,8 @@ inline void fastGlobalIrqUnlock() noexcept
 /**
  * This class is a RAII lock for holding the global lock.
  * This class automatically releases the lock when it goes out of scope.
+ *
+ * \note This class replaces the FastInterruptDisableLock class in Miosix v2.x
  */
 class FastGlobalIrqLock
 {
@@ -192,6 +206,8 @@ public:
  * }
  * //Finally lock released
  * \endcode
+ *
+ * \note This class replaces the FastInterruptEnableLock class in Miosix v2.x
  */
 class FastGlobalIrqUnlock
 {
@@ -379,6 +395,8 @@ private:
  * }
  * //Finally kernel started
  * \endcode
+ *
+ * \note This class replaces the RestartKernelLock class in Miosix v2.x
  */
 class PauseKernelUnlock
 {
@@ -441,8 +459,9 @@ public:
  * global lock and we don't expect it to be useful for other uses, that's why
  * we're currently not providing RAII-style lock classes, though this may change
  * in the future if some use case for this function is found.
- * If you're trying to use this for driver development maybe you're looking for
- * fastGlobalIrqLock()?
+ *
+ * \note If you're trying to use this function for driver development maybe
+ * you're looking for fastGlobalIrqLock() instead?
  */
 inline void fastDisableIrq() noexcept;
 
@@ -455,8 +474,9 @@ inline void fastDisableIrq() noexcept;
  * global lock and we don't expect it to be useful for other uses, that's why
  * we're currently not providing RAII-style lock classes, though this may change
  * in the future if some use case for this function is found.
- * If you're trying to use this for driver development maybe you're looking for
- * fastGlobalIrqUnlock()?
+ *
+ * \note If you're trying to use this function for driver development maybe
+ * you're looking for fastGlobalIrqUnlock() instead?
  */
 inline void fastEnableIrq() noexcept;
 

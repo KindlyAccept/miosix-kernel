@@ -321,11 +321,6 @@ void Thread::wait()
     //Return here after wakeup
 }
 
-// void Thread::IRQwait()
-// {
-//     const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
-// }
-
 void Thread::PKrestartKernelAndWait(PauseKernelLock& dLock)
 {
     (void)dLock;
@@ -346,7 +341,7 @@ TimedWaitResult Thread::PKrestartKernelAndTimedWait(PauseKernelLock& dLock,
     FastGlobalIrqLock dLockIrq;
     auto savedNesting=kernelRunning;
     kernelRunning=0;
-    auto result=IRQenableIrqAndTimedWaitImpl(absoluteTimeNs);
+    auto result=IRQglobalIrqUnlockAndTimedWaitImpl(absoluteTimeNs);
     if(kernelRunning!=0) errorHandler(UNEXPECTED);
     kernelRunning=savedNesting;
     return result;
@@ -808,7 +803,7 @@ void Thread::IRQglobalIrqUnlockAndWaitImpl()
     globalLockNesting=savedNesting;
 }
 
-TimedWaitResult Thread::IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs)
+TimedWaitResult Thread::IRQglobalIrqUnlockAndTimedWaitImpl(long long absoluteTimeNs)
 {
     absoluteTimeNs=std::max(absoluteTimeNs,100000LL);
     Thread *t=const_cast<Thread*>(runningThread);

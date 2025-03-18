@@ -236,28 +236,6 @@ public:
      * Ths method is useful to implement any kind of blocking primitive,
      * including device drivers.
      *
-     * Note: this method is meant to put the current thread in wait status in a
-     * piece of code where interrupts are disbled; it returns immediately, so
-     * the user is responsible for re-enabling interrupts and calling yield to
-     * effectively put the thread in wait status.
-     *
-     * \code
-     * globalIrqLock();
-     * ...
-     * Thread::IRQwait(); //Return immediately
-     * globalIrqUnlock();
-     * Thread::yield(); //After this, thread is in wait status
-     * \endcode
-     *
-     * Consider using IRQglobalIrqUnlockAndWait() instead.
-     */
-    // static void IRQwait();
-
-    /**
-     * This method stops the thread until wakeup() is called.
-     * Ths method is useful to implement any kind of blocking primitive,
-     * including device drivers.
-     *
      * NOTE: this method is meant to put the current thread in wait status in a
      * piece of code where the kernel is paused (preemption disabled).
      * Preemption will be enabled during the waiting period, and disabled back
@@ -279,6 +257,8 @@ public:
      *
      * \param dLock the GlobalIrqLock object that was used to disable
      * interrupts in the current context.
+     *
+     * \note This member function replaces IRQenableIrqAndWait() in Miosix v2.x
      */
     static void IRQglobalIrqUnlockAndWait(GlobalIrqLock& dLock)
     {
@@ -297,6 +277,8 @@ public:
      *
      * \param dLock the FastGlobalIrqLock object that was used to disable
      * interrupts in the current context.
+     *
+     * \note This member function replaces IRQenableIrqAndWait() in Miosix v2.x
      */
     static void IRQglobalIrqUnlockAndWait(FastGlobalIrqLock& dLock)
     {
@@ -317,7 +299,7 @@ public:
     static TimedWaitResult timedWait(long long absoluteTimeNs)
     {
         FastGlobalIrqLock dLock;
-        return IRQenableIrqAndTimedWaitImpl(absoluteTimeNs);
+        return IRQglobalIrqUnlockAndTimedWaitImpl(absoluteTimeNs);
     }
 
     /**
@@ -355,12 +337,14 @@ public:
      * interrupts in the current context.
      * \param absoluteTimeoutNs absolute time after which the wait times out
      * \return TimedWaitResult::Timeout if the wait timed out
+     *
+     * \note This member function replaces IRQenableIrqAndTimedWait() in Miosix v2.x
      */
-    static TimedWaitResult IRQenableIrqAndTimedWait(GlobalIrqLock& dLock,
+    static TimedWaitResult IRQglobalIrqUnlockAndTimedWait(GlobalIrqLock& dLock,
             long long absoluteTimeNs)
     {
         (void)dLock; //Common implementation doesn't need it
-        return IRQenableIrqAndTimedWaitImpl(absoluteTimeNs);
+        return IRQglobalIrqUnlockAndTimedWaitImpl(absoluteTimeNs);
     }
 
     /**
@@ -378,12 +362,14 @@ public:
      * interrupts in the current context.
      * \param absoluteTimeoutNs absolute time after which the wait times out
      * \return TimedWaitResult::Timeout if the wait timed out
+     *
+     * \note This member function replaces IRQenableIrqAndTimedWait() in Miosix v2.x
      */
-    static TimedWaitResult IRQenableIrqAndTimedWait(FastGlobalIrqLock& dLock,
+    static TimedWaitResult IRQglobalIrqUnlockAndTimedWait(FastGlobalIrqLock& dLock,
             long long absoluteTimeNs)
     {
         (void)dLock; //Common implementation doesn't need it
-        return IRQenableIrqAndTimedWaitImpl(absoluteTimeNs);
+        return IRQglobalIrqUnlockAndTimedWaitImpl(absoluteTimeNs);
     }
 
     /**
@@ -873,7 +859,7 @@ private:
     /**
      * Common implementation of all timedWait calls
      */
-    static TimedWaitResult IRQenableIrqAndTimedWaitImpl(long long absoluteTimeNs);
+    static TimedWaitResult IRQglobalIrqUnlockAndTimedWaitImpl(long long absoluteTimeNs);
 
     /**
      * Same as exists() but is meant to be called only inside an IRQ or when
