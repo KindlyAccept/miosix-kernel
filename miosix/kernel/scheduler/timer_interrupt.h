@@ -46,7 +46,7 @@ extern bool IRQwakeThreads(long long currentTime);///\internal Do not use outsid
 inline bool IRQtimerInterrupt(long long currentTime)
 {
     bool hptw = IRQwakeThreads(currentTime);
-    if(currentTime >= Scheduler::IRQgetNextPreemption() || hptw)
+    if(hptw || currentTime >= Scheduler::IRQgetNextPreemption())
     {
         //End of the burst || a higher priority thread has woken up
         IRQinvokeScheduler(); //If the kernel is running, preempt
