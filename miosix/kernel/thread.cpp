@@ -72,7 +72,7 @@ static volatile bool existDeleted=false;
 
 IntrusiveList<SleepData> sleepingList;///list of sleeping threads
 
-bool kernelStarted=false;///<\internal becomes true after startKernel.
+bool kernelStarted=false;///<\internal becomes true after IRQstartKernel.
 
 #ifdef WITH_PROCESSES
 /// The proc field of the Thread class for kernel threads points to this object
@@ -135,10 +135,10 @@ void *idleThread(void *argv)
  * Calls errorHandler(OUT_OF_MEMORY) if there is no heap to create the idle
  * thread. If the function succeds in starting the kernel, it never returns;
  * otherwise it will call errorHandler(OUT_OF_MEMORY) and then return
- * immediately. startKernel() must not be called when the kernel is already
+ * immediately. IRQstartKernel() must not be called when the kernel is already
  * started.
  */
-void startKernel()
+void IRQstartKernel()
 {
     #ifdef WITH_PROCESSES
     try {
@@ -154,7 +154,7 @@ void startKernel()
     auto *idle=Thread::IRQgetCurrentThread();
     
     #ifdef WITH_PROCESSES
-    // If the idle thread was allocated before startKernel(), then its proc
+    // If the idle thread was allocated before IRQstartKernel(), then its proc
     // is nullptr. We can't move kernel=new ProcessBase; earlier than this
     // function, though
     idle->proc=kernel;

@@ -55,7 +55,7 @@ namespace miosix {
 void IRQinitIrqTable() noexcept;
 
 ///<\internal Provided by thread.cpp
-void startKernel();
+void IRQstartKernel();
 
 /**
  * \internal
@@ -118,11 +118,11 @@ void IRQkernelBootEntryPoint()
         #endif // WITH_DEEP_SLEEP
         //After IRQbspInit() serial port is initialized, so we can use IRQbootlog
         IRQbootlog("Starting Kernel... ");
-        startKernel();
+        IRQstartKernel();
     #ifndef __NO_EXCEPTIONS
     } catch(...) {}
     #endif //__NO_EXCEPTIONS
-    //If for some reason startKernel() fails and returns or an exception is
+    //If for some reason IRQstartKernel() fails and returns or an exception is
     //thrown, reboot
     IRQsystemReboot();
 }

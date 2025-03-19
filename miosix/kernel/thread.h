@@ -856,7 +856,7 @@ private:
      * Allocates the idle thread and makes cur point to it
      * Can only be called before the kernel is started, is called exactly once
      * so that getCurrentThread() always returns a pointer to a valid thread or
-     * by startKernel to create the idle thread, whichever comes first.
+     * by IRQstartKernel to create the idle thread, whichever comes first.
      * \return the newly allocated idle thread
      */
     static Thread *allocateIdleThread();
@@ -915,7 +915,7 @@ private:
     //Needs access to flags
     friend bool IRQwakeThreads(long long);
     //Needs to create the idle thread
-    friend void startKernel();
+    friend void IRQstartKernel();
     //Needs access to priority, savedPriority, mutexLocked and flags.
     friend class Mutex;
     //Needs access to flags, schedData
