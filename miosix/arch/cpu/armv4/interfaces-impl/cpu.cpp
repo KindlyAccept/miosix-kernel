@@ -92,11 +92,4 @@ void IRQportableStartKernel()
     //Never reaches here
 }
 
-//TODO: here for historical reason, move to arch- or board-specific file
-void IRQsystemReboot()
-{
-    //Jump to reset vector
-    asm volatile("ldr pc, =0"::);
-}
-
 } //namespace miosix

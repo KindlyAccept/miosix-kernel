@@ -82,10 +82,4 @@ void IRQportableStartKernel()
     //Never reaches here
 }
 
-//TODO: here for historical reason, move to arch- or board-specific file
-void IRQsystemReboot()
-{
-    NVIC_SystemReset();
-}
-
 } //namespace miosix
