@@ -36,12 +36,21 @@ namespace miosix {
 
 #ifdef WITH_PROCESSES
 
+// NOTE: workaround for weird compiler bug. The r7 register is the syscall ID
+// in Miosix. When compiling with O0 however, r7 is also used as frame pointer.
+// And when compiling with O0, if asm code using r7 gets inlined in a too
+// complex function, GCC gives up with an "error: r7 cannot be used in asm here"
+// Since this function needs to do a syscall and thus must use r7, let's use the
+// __OPTIMIZE__ macro to figure out if we're being compiled with O0 or not, and
+// if so don't inline this function.
+#ifdef __OPTIMIZE__
 inline void portableSwitchToUserspace()
 {
     asm volatile("movs r7, #1\n\t"
                  "svc  0"
                  :::"r7", "cc", "memory");
 }
+#endif //__OPTIMIZE__
 
 namespace {
 /**

@@ -36,6 +36,16 @@ using namespace std;
 
 namespace miosix {
 
+// NOTE: workaround for weird compiler bug. See header file for an explanation.
+#ifndef __OPTIMIZE__
+void portableSwitchToUserspace()
+{
+    asm volatile("movs r7, #1\n\t"
+                 "svc  0"
+                 :::"r7", "cc", "memory");
+}
+#endif //__OPTIMIZE__
+
 #ifdef WITH_PROCESSES
 
 void initUserThreadCtxsave(unsigned int *ctxsave, unsigned int pc, int argc,
