@@ -32,7 +32,11 @@ namespace miosix {
 
 void IRQsystemReboot()
 {
-    NVIC_SystemReset();
+    //Reset via the watchdog
+    psm_hw->wdsel=PSM_WDSEL_PROC0_BITS|PSM_WDSEL_PROC1_BITS;
+    watchdog_hw->ctrl|=WATCHDOG_CTRL_TRIGGER_BITS;
+    //Shouldn't reach here!
+    for(;;) ;
 }
 
 } // namespace miosix
