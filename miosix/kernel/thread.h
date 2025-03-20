@@ -616,39 +616,44 @@ private:
         /**
          * Constructor, sets flags to default.
          */
-        ThreadFlags(Thread *t) : t(t), flags(0) {}
+        ThreadFlags(): flags(0) {}
 
         /**
          * Set the wait flag of the thread.
          * Can only be called with interrupts disabled or within an interrupt.
+         * \param self thread whose status changed
          * \param waiting if true the flag will be set, otherwise cleared
          */
-        void IRQsetWait(bool waiting);
+        void IRQsetWait(Thread *self, bool waiting);
 
         /**
          * Set the sleep flag of the thread.
          * Can only be called with interrupts disabled or within an interrupt.
+         * \param self thread whose status changed
          */
-        void IRQsetSleep();
+        void IRQsetSleep(Thread *self);
 
         /**
          * Used by IRQwakeThreads to clear both the sleep and wait flags,
          * waking threads doing absoluteSleep() as well as timedWait()
+         * \param self thread whose status changed
          */
-        void IRQclearSleepAndWait();
+        void IRQclearSleepAndWait(Thread *self);
 
         /**
          * Set the wait_join flag of the thread.
          * Can only be called with interrupts disabled or within an interrupt.
+         * \param self thread whose status changed
          * \param waiting if true the flag will be set, otherwise cleared
          */
-        void IRQsetJoinWait(bool waiting);
+        void IRQsetJoinWait(Thread *self, bool waiting);
 
         /**
          * Set the deleted flag of the thread. This flag can't be cleared.
          * Can only be called with interrupts disabled or within an interrupt.
+         * \param self thread whose status changed
          */
-        void IRQsetDeleted();
+        void IRQsetDeleted(Thread *self);
 
         /**
          * Set the sleep flag of the thread. This flag can't be cleared.
@@ -753,7 +758,6 @@ private:
         ///\internal Thread is running in userspace
         static const unsigned int USERSPACE=1<<6;
 
-        Thread* t; ///<\internal pointer to the thread to which the flags belong
         unsigned char flags;///<\internal flags are stored here
     };
     

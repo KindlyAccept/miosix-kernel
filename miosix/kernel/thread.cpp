@@ -220,8 +220,9 @@ bool IRQwakeThreads(long long currentTime)
     {
         if(currentTime<(*it)->wakeupTime) break;
         //Wake both threads doing absoluteSleep() and timedWait()
-        (*it)->thread->flags.IRQclearSleepAndWait();
-        if(const_cast<Thread*>(runningThread)->IRQgetPriority()<(*it)->thread->IRQgetPriority())
+        Thread *t=(*it)->thread;
+        t->flags.IRQclearSleepAndWait(t);
+        if(const_cast<Thread*>(runningThread)->IRQgetPriority()<t->IRQgetPriority())
             result=true;
         it=sleepingList.erase(it);
     }
@@ -304,7 +305,7 @@ void Thread::nanoSleepUntil(long long absoluteTimeNs)
     {
         FastGlobalIrqLock dLock;
         SleepData d(const_cast<Thread*>(runningThread),absoluteTimeNs);
-        d.thread->flags.IRQsetSleep(); //Sleeping thread: set sleep flag
+        d.thread->flags.IRQsetSleep(d.thread); //Sleeping thread: set sleep flag
         IRQaddToSleepingList(&d);
         {
             FastGlobalIrqUnlock eLock(dLock);
@@ -320,7 +321,8 @@ void Thread::wait()
     //pausing the kernel is not enough because of IRQwait and IRQwakeup
     {
         FastGlobalIrqLock lock;
-        const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
+        Thread *cur=const_cast<Thread*>(runningThread);
+        cur->flags.IRQsetWait(cur,true);
     }
     Thread::yield();
     //Return here after wakeup
@@ -358,12 +360,12 @@ void Thread::PKwakeup()
     //DO NOT refactor this code by calling IRQwakeup() as IRQwakeup can cause
     //the scheduler interrupt to be called something we should avoid doing here
     FastGlobalIrqLock lock;
-    this->flags.IRQsetWait(false);
+    this->flags.IRQsetWait(this,false);
 }
 
 void Thread::IRQwakeup()
 {
-    this->flags.IRQsetWait(false);
+    this->flags.IRQsetWait(this,false);
     if(this->IRQgetPriority()>Thread::IRQgetCurrentThread()->IRQgetPriority())
         IRQinvokeScheduler();
 }
@@ -443,7 +445,7 @@ void Thread::terminate()
     FastGlobalIrqLock lock;
     if(this->flags.isDeleting()) return; //Prevent sleep interruption abuse
     this->flags.IRQsetDeleting();
-    this->flags.IRQclearSleepAndWait(); //Interruptibility
+    this->flags.IRQclearSleepAndWait(this); //Interruptibility
 }
 
 bool Thread::testTerminate()
@@ -464,14 +466,15 @@ void Thread::detach()
 
     //Corner case: detaching a thread, but somebody else already called join
     //on it. This makes join return false instead of deadlocking
-    if(this->joinData.waitingForJoin!=nullptr)
+    Thread *t=this->joinData.waitingForJoin;
+    if(t!=nullptr)
     {
         //joinData is an union, so its content can be an invalid thread
         //this happens if detaching a thread that has already terminated
         if(this->flags.isDeletedJoin()==false)
         {
             //Wake thread, or it might sleep forever
-            this->joinData.waitingForJoin->flags.IRQsetJoinWait(false);
+            t->flags.IRQsetJoinWait(t,false);
         }
     }
 }
@@ -485,7 +488,8 @@ bool Thread::join(void** result)
 {
     {
         FastGlobalIrqLock dLock;
-        if(this==Thread::IRQgetCurrentThread()) return false;
+        Thread *cur=const_cast<Thread*>(runningThread);
+        if(this==cur) return false;
         if(Thread::IRQexists(this)==false) return false;
         if(this->flags.isDetached()) return false;
         if(this->flags.isDeletedJoin()==false)
@@ -493,11 +497,11 @@ bool Thread::join(void** result)
             //Another thread already called join on toJoin
             if(this->joinData.waitingForJoin!=nullptr) return false;
 
-            this->joinData.waitingForJoin=Thread::IRQgetCurrentThread();
+            this->joinData.waitingForJoin=cur;
             for(;;)
             {
                 //Wait
-                Thread::IRQgetCurrentThread()->flags.IRQsetJoinWait(true);
+                cur->flags.IRQsetJoinWait(cur,true);
                 {
                     FastGlobalIrqUnlock eLock(dLock);
                     Thread::yield();
@@ -627,7 +631,7 @@ Thread *Thread::createUserspace(void *(*startfunc)(void *), Process *proc)
     }
     
     thread->proc=proc;
-    thread->flags.IRQsetWait(true); //Thread is not yet ready
+    thread->flags.IRQsetWait(thread,true); //Thread is not yet ready
     
     //Add thread to thread list
     {
@@ -666,7 +670,7 @@ void Thread::setupUserspaceContext(unsigned int entry, int argc, void *argvSp,
 #endif //WITH_PROCESSES
 
 Thread::Thread(unsigned int *watermark, unsigned int stacksize,
-               bool defaultReent) : schedData(), flags(this), savedPriority(0),
+               bool defaultReent) : schedData(), savedPriority(0),
                mutexLocked(nullptr), mutexWaiting(nullptr), watermark(watermark),
                ctxsave(), stacksize(stacksize)
 {
@@ -768,15 +772,16 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
     //to remove it from the list
     {
         FastGlobalIrqLock lock;
-        cur->flags.IRQsetDeleted();
+        cur->flags.IRQsetDeleted(cur);
 
         if(cur->flags.isDetached()==false)
         {
             //If thread is joinable, handle join
-            if(cur->joinData.waitingForJoin!=nullptr)
+            Thread *t=cur->joinData.waitingForJoin;
+            if(t!=nullptr)
             {
                 //Wake thread
-                cur->joinData.waitingForJoin->flags.IRQsetJoinWait(false);
+                t->flags.IRQsetJoinWait(t,false);
             }
             //Set result
             cur->joinData.result=result;
@@ -792,7 +797,8 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
 
 void Thread::IRQglobalIrqUnlockAndWaitImpl()
 {
-    const_cast<Thread*>(runningThread)->flags.IRQsetWait(true);
+    Thread *cur=const_cast<Thread*>(runningThread);
+    cur->flags.IRQsetWait(cur,true);
     auto savedNesting=globalLockNesting; //For GlobalIrqLock
     globalLockNesting=0;
     #ifdef WITH_SMP
@@ -815,7 +821,7 @@ TimedWaitResult Thread::IRQglobalIrqUnlockAndTimedWaitImpl(long long absoluteTim
     absoluteTimeNs=std::max(absoluteTimeNs,100000LL);
     Thread *t=const_cast<Thread*>(runningThread);
     SleepData sleepData(t,absoluteTimeNs);
-    t->flags.IRQsetWait(true); //timedWait thread: set wait flag
+    t->flags.IRQsetWait(t,true); //timedWait thread: set wait flag
     IRQaddToSleepingList(&sleepData);
     auto savedNesting=globalLockNesting; //For GlobalIrqLock
     globalLockNesting=0;
@@ -868,34 +874,34 @@ struct _reent *Thread::getCReent()
 // class ThreadFlags
 //
 
-void Thread::ThreadFlags::IRQsetWait(bool waiting)
+void Thread::ThreadFlags::IRQsetWait(Thread *self, bool waiting)
 {
     if(waiting) flags |= WAIT; else flags &= ~WAIT;
-    Scheduler::IRQwaitStatusHook(this->t);
+    Scheduler::IRQwaitStatusHook(self);
 }
 
-void Thread::ThreadFlags::IRQsetSleep()
+void Thread::ThreadFlags::IRQsetSleep(Thread *self)
 {
     flags |= SLEEP;
-    Scheduler::IRQwaitStatusHook(this->t);
+    Scheduler::IRQwaitStatusHook(self);
 }
 
-void Thread::ThreadFlags::IRQclearSleepAndWait()
+void Thread::ThreadFlags::IRQclearSleepAndWait(Thread *self)
 {
     flags &= ~(WAIT | SLEEP);
-    Scheduler::IRQwaitStatusHook(this->t);
+    Scheduler::IRQwaitStatusHook(self);
 }
 
-void Thread::ThreadFlags::IRQsetJoinWait(bool waiting)
+void Thread::ThreadFlags::IRQsetJoinWait(Thread *self, bool waiting)
 {
     if(waiting) flags |= WAIT_JOIN; else flags &= ~WAIT_JOIN;
-    Scheduler::IRQwaitStatusHook(this->t);
+    Scheduler::IRQwaitStatusHook(self);
 }
 
-void Thread::ThreadFlags::IRQsetDeleted()
+void Thread::ThreadFlags::IRQsetDeleted(Thread *self)
 {
     flags |= DELETED;
-    Scheduler::IRQwaitStatusHook(this->t);
+    Scheduler::IRQwaitStatusHook(self);
 }
 
 } //namespace miosix
