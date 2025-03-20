@@ -213,7 +213,9 @@ void IRQstartKernel()
     
     // Boot the other cores, and this core.
     kernelStarted=true;
+    #ifdef WITH_SMP
     IRQinitSMP(coreBootStacks,coreBootEntryPoints);
+    #endif //WITH_SMP
     IRQportableStartKernel();
 }
 
