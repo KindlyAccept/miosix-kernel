@@ -133,7 +133,7 @@ private:
 
     ///\internal Vector of lists of threads, there's one list for each priority
     ///Each list s a circular list.
-    static Thread *threadList[PRIORITY_MAX];
+    static IntrusiveList<Thread> threadList[PRIORITY_MAX];
 
     ///\internal idle thread
     static Thread *idle;

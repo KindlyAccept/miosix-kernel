@@ -93,7 +93,7 @@ class SyscallParameters;
  * terminate at any time. For example, if you call wakeup() on a terminated
  * thread, the behavior is undefined.
  */
-class Thread
+class Thread : public IntrusiveListItem
 {
 public:
 

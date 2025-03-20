@@ -52,30 +52,15 @@ bool PriorityScheduler::PKaddThread(Thread *thread,
         PrioritySchedulerPriority priority)
 {
     thread->schedData.priority=priority;
-    if(threadList[priority.get()]==nullptr)
-    {
-        threadList[priority.get()]=thread;
-        thread->schedData.next=thread;//Circular list
-    } else {
-        thread->schedData.next=threadList[priority.get()]->schedData.next;
-        threadList[priority.get()]->schedData.next=thread;
-    }
+    threadList[priority.get()].push_back(thread);
     return true;
 }
 
 bool PriorityScheduler::PKexists(Thread *thread)
 {
+    if(thread==runningThread) return true; //Running thread is not in any list
     for(int i=PRIORITY_MAX-1;i>=0;i--)
-    {
-        if(threadList[i]==nullptr) continue;
-        Thread *temp=threadList[i];
-        for(;;)
-        {
-            if((temp==thread) && (!temp->flags.isDeleted())) return true;
-            temp=temp->schedData.next;
-            if(temp==threadList[i]) break;
-        }
-    }
+        for(auto t : threadList[i]) if(t==thread) return !t->flags.isDeleted();
     return false;
 }
 
@@ -83,58 +68,16 @@ void PriorityScheduler::PKremoveDeadThreads()
 {
     for(int i=PRIORITY_MAX-1;i>=0;i--)
     {
-        if(threadList[i]==nullptr) continue;
-        bool first=false;//If false the tail of the list hasn't been calculated
-        Thread *tail=nullptr;//Tail of the list
-        //Special case: removing first element in the list
-        while(threadList[i]->flags.isDeleted())
+        auto t=threadList[i].begin(), e=threadList[i].end();
+        while(t!=e)
         {
-            if(threadList[i]->schedData.next==threadList[i])
+            if((*t)->flags.isDeleted())
             {
-                //Only one element in the list
-                //Call destructor manually because of placement new
-                void *base=threadList[i]->watermark;
-                threadList[i]->~Thread();
-                free(base); //Delete ALL thread memory
-                threadList[i]=nullptr;
-                break;
-            }
-            //If it is the first time the tail of the list hasn't
-            //been calculated
-            if(first==false)
-            {
-                first=true;
-                tail=threadList[i];
-                while(tail->schedData.next!=threadList[i])
-                    tail=tail->schedData.next;
-            }
-            Thread *d=threadList[i];//Save a pointer to the thread
-            threadList[i]=threadList[i]->schedData.next;//Remove from list
-            //Fix the tail of the circular list
-            tail->schedData.next=threadList[i];
-            //Call destructor manually because of placement new
-            void *base=d->watermark;
-            d->~Thread();
-            free(base);//Delete ALL thread memory
-        }
-        if(threadList[i]==nullptr) continue;
-        //If it comes here, the first item is not nullptr, and doesn't have
-        //to be deleted General case: removing items not at the first
-        //place
-        Thread *temp=threadList[i];
-        for(;;)
-        {
-            if(temp->schedData.next==threadList[i]) break;
-            if(temp->schedData.next->flags.isDeleted())
-            {
-                Thread *d=temp->schedData.next;//Save a pointer to the thread
-                //Remove from list
-                temp->schedData.next=temp->schedData.next->schedData.next;
-                //Call destructor manually because of placement new
-                void *base=d->watermark;
-                d->~Thread();
-                free(base);//Delete ALL thread memory
-            } else temp=temp->schedData.next;
+                void *base=(*t)->watermark;
+                (*t)->~Thread();//Call destructor manually because of placement new
+                free(base);  //Delete ALL thread memory
+                t=threadList[i].erase(t);
+            } else ++t;
         }
     }
 }
@@ -142,55 +85,17 @@ void PriorityScheduler::PKremoveDeadThreads()
 void PriorityScheduler::PKsetPriority(Thread *thread,
         PrioritySchedulerPriority newPriority)
 {
-    PrioritySchedulerPriority oldPriority=thread->PKgetPriority();
-    //First set priority to the new value
-    thread->schedData.priority=newPriority;
-    //Then remove the thread from its old list
-    if(threadList[oldPriority.get()]==thread)
+    if(thread==runningThread)
     {
-        if(threadList[oldPriority.get()]->schedData.next==
-                threadList[oldPriority.get()])
-        {
-            //Only one element in the list
-            threadList[oldPriority.get()]=nullptr;
-        } else {
-            Thread *tail=threadList[oldPriority.get()];//Tail of the list
-            while(tail->schedData.next!=threadList[oldPriority.get()])
-                tail=tail->schedData.next;
-            //Remove
-            threadList[oldPriority.get()]=
-                    threadList[oldPriority.get()]->schedData.next;
-            //Fix tail of the circular list
-            tail->schedData.next=threadList[oldPriority.get()];
-        }
+        //Thread is running so is not in any list, only change priority value
+        thread->schedData.priority=newPriority;
     } else {
-        //If it comes here, the first item doesn't have to be removed
-        //General case: removing item not at the first place
-        Thread *temp=threadList[oldPriority.get()];
-        for(;;)
-        {
-            if(temp->schedData.next==threadList[oldPriority.get()])
-            {
-                //After walking all elements in the list the thread wasn't found
-                //This should never happen
-                errorHandler(UNEXPECTED);
-            }
-            if(temp->schedData.next==thread)
-            {
-                //Remove from list
-                temp->schedData.next=temp->schedData.next->schedData.next;
-                break;
-            } else temp=temp->schedData.next;
-        }
-    }
-    //Last insert the thread in the new list
-    if(threadList[newPriority.get()]==nullptr)
-    {
-        threadList[newPriority.get()]=thread;
-        thread->schedData.next=thread;//Circular list
-    } else {
-        thread->schedData.next=threadList[newPriority.get()]->schedData.next;
-        threadList[newPriority.get()]->schedData.next=thread;
+        //Remove the thread from its old list
+        threadList[thread->schedData.priority.get()].removeFast(thread);
+        //Set priority to the new value
+        thread->schedData.priority=newPriority;
+        //Last insert the thread in the new list
+        threadList[newPriority.get()].push_back(thread);
     }
 }
 
@@ -228,44 +133,40 @@ void PriorityScheduler::IRQrunScheduler()
         pendingWakeup=true;
         return;
     }
-    #ifdef WITH_CPU_TIME_COUNTER
+    //Add the previous thread to the back of the priority list (round-robin)
     Thread *prev=const_cast<Thread*>(runningThread);
-    #endif // WITH_CPU_TIME_COUNTER
+    int prevPriority=prev->schedData.priority.get();
+    if(prevPriority!=-1) threadList[prevPriority].push_back(prev);
     for(int i=PRIORITY_MAX-1;i>=0;i--)
     {
-        if(threadList[i]==nullptr) continue;
-        Thread *temp=threadList[i]->schedData.next;
-        for(;;)
+        for(auto next : threadList[i])
         {
-            if(temp->flags.isReady())
+            if(next->flags.isReady()==false) continue;
+            //Found a READY thread, so run this one
+            runningThread=next;
+            #ifdef WITH_PROCESSES
+            if(next->flags.isInUserspace()==false)
             {
-                //Found a READY thread, so run this one
-                runningThread=temp;
-                #ifdef WITH_PROCESSES
-                if(const_cast<Thread*>(runningThread)->flags.isInUserspace()==false)
-                {
-                    ctxsave=runningThread->ctxsave;
-                    MPUConfiguration::IRQdisable();
-                } else {
-                    ctxsave=runningThread->userCtxsave;
-                    //A kernel thread is never in userspace, so the cast is safe
-                    static_cast<Process*>(runningThread->proc)->mpu.IRQenable();
-                }
-                #else //WITH_PROCESSES
-                ctxsave=temp->ctxsave;
-                #endif //WITH_PROCESSES
-                //Rotate to next thread so that next time the list is walked
-                //a different thread, if available, will be chosen first
-                threadList[i]=temp;
-                #ifndef WITH_CPU_TIME_COUNTER
-                IRQsetNextPreemption(false);
-                #else //WITH_CPU_TIME_COUNTER
-                auto t=IRQsetNextPreemption(false);
-                IRQprofileContextSwitch(prev->timeCounterData,temp->timeCounterData,t);
-                #endif //WITH_CPU_TIME_COUNTER
-                return;
-            } else temp=temp->schedData.next;
-            if(temp==threadList[i]->schedData.next) break;
+                ctxsave=next->ctxsave;
+                MPUConfiguration::IRQdisable();
+            } else {
+                ctxsave=next->userCtxsave;
+                //A kernel thread is never in userspace, so the cast is safe
+                static_cast<Process*>(next->proc)->mpu.IRQenable();
+            }
+            #else //WITH_PROCESSES
+            ctxsave=next->ctxsave;
+            #endif //WITH_PROCESSES
+            #ifndef WITH_CPU_TIME_COUNTER
+            IRQsetNextPreemption(false);
+            #else //WITH_CPU_TIME_COUNTER
+            auto t=IRQsetNextPreemption(false);
+            IRQprofileContextSwitch(prev->timeCounterData,next->timeCounterData,t);
+            #endif //WITH_CPU_TIME_COUNTER
+            //Remove the selected thread from the list. This invalidates
+            //iterators sho it should be done last
+            threadList[i].removeFast(next);
+            return;
         }
     }
     //No thread found, run the idle thread
@@ -282,7 +183,7 @@ void PriorityScheduler::IRQrunScheduler()
     #endif //WITH_CPU_TIME_COUNTER
 }
 
-Thread *PriorityScheduler::threadList[PRIORITY_MAX]={nullptr};
+IntrusiveList<Thread> PriorityScheduler::threadList[PRIORITY_MAX];
 Thread *PriorityScheduler::idle=nullptr;
 
 } //namespace miosix

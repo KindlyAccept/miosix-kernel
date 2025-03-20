@@ -129,7 +129,6 @@ public:
     ///this.<br>It is also necessary to move the thread from the old prority
     ///list to the new priority list.
     PrioritySchedulerPriority priority;
-    Thread *next;///<Pointer to next thread of the same priority. CIRCULAR list
 };
 
 } //namespace miosix
