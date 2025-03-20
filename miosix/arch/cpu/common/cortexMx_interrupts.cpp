@@ -671,6 +671,7 @@ void SVC_Handler()
  */
 void __attribute__((noinline)) pendsvImpl()
 {
+    FastGlobalLockFromIrq lock;
     Thread::IRQstackOverflowCheck();
     Scheduler::IRQrunScheduler();
 }

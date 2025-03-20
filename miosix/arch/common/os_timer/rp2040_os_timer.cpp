@@ -67,6 +67,7 @@ static inline long long IRQgetTicks() noexcept
 template<unsigned char AlarmId>
 static void IRQtimerInterruptHandler()
 {
+    FastGlobalLockFromIrq irq;
     timer_hw->intr=1<<AlarmId; //Bit is write-clear
     auto tnow=IRQgetTicks(), twake=lastAlarmTicks[AlarmId];
     //Check the full 64 bits. If the alarm deadline has passed, call the kernel.
