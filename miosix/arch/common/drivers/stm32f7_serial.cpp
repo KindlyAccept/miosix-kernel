@@ -606,12 +606,7 @@ void STM32Serial::IRQhandleInterrupt()
 
 void STM32Serial::IRQwrite(const char *str)
 {
-    // We can reach here also with only kernel paused, so make sure
-    // interrupts are disabled
-    bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastGlobalIrqLock();
     STM32SerialBase::IRQwrite(str);
-    if(interrupts) fastGlobalIrqUnlock();
 }
 
 STM32Serial::~STM32Serial()
@@ -820,14 +815,9 @@ void STM32DMASerial::IRQhandleInterrupt()
 
 void STM32DMASerial::IRQwrite(const char *str)
 {
-    //We can reach here also with only kernel paused, so make sure
-    //interrupts are disabled
-    bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastGlobalIrqLock();
     //Wait until DMA xfer ends. EN bit is cleared by hardware on transfer end
     port->getDma().IRQwaitDmaWriteStop();
     STM32SerialBase::IRQwrite(str);
-    if(interrupts) fastGlobalIrqUnlock();
 }
 
 STM32DMASerial::~STM32DMASerial()

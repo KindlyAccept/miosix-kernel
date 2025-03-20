@@ -138,8 +138,7 @@ public:
      * which is used by the kernel on console devices to write debug information
      * before the kernel is started or in case of serious errors, right before
      * rebooting.
-     * Can ONLY be called when the kernel is not yet started, paused or within
-     * an interrupt. This default implementation ignores writes.
+     * This default implementation ignores writes.
      * \param str the string to write. The string must be NUL terminated.
      */
     virtual void IRQwrite(const char *str);

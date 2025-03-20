@@ -138,17 +138,12 @@ ssize_t EFM32Serial::writeBlock(const void *buffer, size_t size, off_t where)
 
 void EFM32Serial::IRQwrite(const char *str)
 {
-    // We can reach here also with only kernel paused, so make sure
-    // interrupts are disabled.
-    bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastGlobalIrqLock();
     while(*str)
     {
         while((port->STATUS & USART_STATUS_TXBL)==0) ;
         port->TXDATA=*str++;
     }
     waitSerialTxFifoEmpty();
-    if(interrupts) fastGlobalIrqUnlock();
 }
 
 int EFM32Serial::ioctl(int cmd, void* arg)

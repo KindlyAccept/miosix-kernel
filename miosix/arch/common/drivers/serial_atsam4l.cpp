@@ -117,17 +117,12 @@ ssize_t ATSAMSerial::writeBlock(const void *buffer, size_t size, off_t where)
 
 void ATSAMSerial::IRQwrite(const char *str)
 {
-    // We can reach here also with only kernel paused, so make sure
-    // interrupts are disabled.
-    bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastGlobalIrqLock();
     while(*str)
     {
         while((port->US_CSR & US_CSR_TXRDY) == 0) ;
         port->US_THR = *str++;
     }
     waitSerialTxFifoEmpty();
-    if(interrupts) fastGlobalIrqUnlock();
 }
 
 int ATSAMSerial::ioctl(int cmd, void *arg)
