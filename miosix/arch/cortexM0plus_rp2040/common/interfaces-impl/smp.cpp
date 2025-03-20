@@ -118,8 +118,7 @@ __attribute__((naked)) void initCore1()
 __attribute__((noreturn)) void IRQcontinueInitCore1()
 {
     // Read main function info from FIFO
-    void (*f)(void *)=reinterpret_cast<void (*)(void *)>(fifoReceive());
-    void *arg=reinterpret_cast<void *>(fifoReceive());
+    void (*f)()=reinterpret_cast<void (*)()>(fifoReceive());
     // Initialize all interrupts to a default priority
     NVIC_SetPriority(SVCall_IRQn,defaultIrqPriority);
     NVIC_SetPriority(PendSV_IRQn,defaultIrqPriority);
@@ -139,11 +138,11 @@ __attribute__((noreturn)) void IRQcontinueInitCore1()
     __DSB();
     (unsigned long)sio_hw->spinlock[RP2040HwSpinlocks::InitCoreSync];
     // Call the main function, which shouldn't return. If it does, hang up
-    f(arg);
+    f();
     for(;;) ;
 }
 
-void IRQinitSMP(void *const stackPtrs[], void (*const mains[])(void *), void *const args[]) noexcept
+void IRQinitSMP(void *const stackPtrs[], void (*const mains[])()) noexcept
 {
     // Ensure the core setup end spinlock is not taken
     sio_hw->spinlock[RP2040HwSpinlocks::InitCoreSync]=1;
@@ -168,9 +167,7 @@ void IRQinitSMP(void *const stackPtrs[], void (*const mains[])(void *), void *co
     // Send main function address and args, which will be read by
     // IRQcontinueInitCore1
     unsigned long fp=reinterpret_cast<unsigned long>(mains[0]);
-    unsigned long arg=reinterpret_cast<unsigned long>(args[0]);
     if (!fifoSend(fp)) errorHandler(UNEXPECTED);
-    if (!fifoSend(arg)) errorHandler(UNEXPECTED);
     // Register IPI (FIFO) interrupt handler for core 0
     IRQregisterIrq(SIO_IRQ_PROC0_IRQn,IRQinterProcessorInterruptHandler);
     // Register timer interrupt handler for core 0

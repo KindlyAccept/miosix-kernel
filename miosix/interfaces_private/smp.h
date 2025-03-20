@@ -61,10 +61,8 @@ namespace miosix {
  *                  for each core except core 0.
  * \param mains     An array with one pointer to a main function
  *                  for each core except core 0.
- * \param args      An array with one argument for the main function
- *                  of each core except core 0.
  */
-void IRQinitSMP(void *const stackPtrs[], void (*const mains[])(void *), void *const args[]) noexcept;
+void IRQinitSMP(void *const stackPtrs[], void (*const mains[])()) noexcept;
 
 /**
  * Executes a given function on a specific core within an interrupt context.
