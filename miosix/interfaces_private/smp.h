@@ -94,6 +94,12 @@ inline void callOnCore(unsigned char core, void (*f)(void *), void *arg) noexcep
     IRQcallOnCore(core,f,arg);
 }
 
+/**
+ * Stops SMP support, for example because an unrecoverable system error
+ * happened, by stopping all cores except the current one.
+ */
+void lockupOtherCores();
+
 #endif //WITH_SMP
 
 } // namespace miosix

@@ -88,6 +88,12 @@ void IRQinterProcessorInterruptHandler()
         // When we manage to take the GIL, the other CPU must have already finished
         // sending the data so we can read both pointers without checking
         void (*f)(void *)=reinterpret_cast<void (*)(void *)>(sio_hw->fifo_rd);
+        // Lockup requested? Spin here
+        if(f==nullptr)
+        {
+            FastGlobalUnlockFromIrq dUnlock(dLock);
+            for(;;) ;
+        }
         // if(!(sio_hw->fifo_st & SIO_FIFO_ST_VLD_BITS)) errorHandler(UNEXPECTED);
         void *arg=reinterpret_cast<void *>(sio_hw->fifo_rd);
         f(arg);
@@ -187,6 +193,16 @@ void IRQcallOnCore(unsigned char core, void (*f)(void *), void *arg) noexcept
     sio_hw->fifo_wr=reinterpret_cast<unsigned long>(f);
     while(!(sio_hw->fifo_st & SIO_FIFO_ST_RDY_BITS)) ;
     sio_hw->fifo_wr=reinterpret_cast<unsigned long>(arg);
+}
+
+void lockupOtherCores()
+{
+    // Do not wait for the FIFO is ready to receive bytes. If the FIFO is full
+    // chances are that the other core is crashed already and cannot empty
+    // the FIFO anyway.
+    // To lockup, write a 0 to the FIFO. The IPI handler will read the zero
+    // and hang up for us.
+    if(sio_hw->fifo_st & SIO_FIFO_ST_RDY_BITS) sio_hw->fifo_wr=0;
 }
 
 } // namespace miosix
