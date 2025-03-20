@@ -28,6 +28,7 @@
 #pragma once
 
 #include "config/miosix_settings.h"
+#include "interfaces/cpu_const.h"
 #include "priority_scheduler_types.h"
 #include "kernel/thread.h"
 
@@ -99,11 +100,15 @@ public:
 
     /**
      * \internal
-     * This is called before the kernel is started to by the kernel. The given
+     * This is called before the kernel is started by the kernel. The given
      * thread is the idle thread, to be run all the times where no other thread
      * can run.
+     * \param whichCore either 0 on single core platforms, or specify for which
+     * core this idle thread is meant to be used. Note that it is expected that
+     * during boot exactly one idle thread for each core is given to the
+     * scheduler
      */
-    static void IRQsetIdleThread(Thread *idleThread);
+    static void IRQsetIdleThread(int whichCore, Thread *idleThread);
 
     /**
      * \internal
@@ -136,7 +141,7 @@ private:
     static IntrusiveList<Thread> threadList[PRIORITY_MAX];
 
     ///\internal idle thread
-    static Thread *idle;
+    static Thread *idle[CPU_NUM_CORES];
 };
 
 } //namespace miosix

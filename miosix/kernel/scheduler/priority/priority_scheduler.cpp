@@ -36,7 +36,7 @@
 namespace miosix {
 
 //These are defined in thread.cpp
-extern volatile Thread *runningThread;
+extern volatile Thread *runningThread[CPU_NUM_CORES];
 extern volatile int kernelRunning;
 extern volatile bool pendingWakeup;
 extern IntrusiveList<SleepData> sleepingList;
@@ -58,7 +58,8 @@ bool PriorityScheduler::PKaddThread(Thread *thread,
 
 bool PriorityScheduler::PKexists(Thread *thread)
 {
-    if(thread==runningThread) return true; //Running thread is not in any list
+    for(int i=0;i<CPU_NUM_CORES;i++)
+        if(runningThread[i]==thread) return true; //Running thread is not in any list
     for(int i=PRIORITY_MAX-1;i>=0;i--)
         for(auto t : threadList[i]) if(t==thread) return !t->flags.isDeleted();
     return false;
@@ -85,24 +86,27 @@ void PriorityScheduler::PKremoveDeadThreads()
 void PriorityScheduler::PKsetPriority(Thread *thread,
         PrioritySchedulerPriority newPriority)
 {
-    if(thread==runningThread)
+    //If thread is running it is not in any list, only change priority value
+    for(int i=0;i<CPU_NUM_CORES;i++)
     {
-        //Thread is running so is not in any list, only change priority value
-        thread->schedData.priority=newPriority;
-    } else {
-        //Remove the thread from its old list
-        threadList[thread->schedData.priority.get()].removeFast(thread);
-        //Set priority to the new value
-        thread->schedData.priority=newPriority;
-        //Last insert the thread in the new list
-        threadList[newPriority.get()].push_back(thread);
+        if(thread==runningThread[i])
+        {
+            thread->schedData.priority=newPriority;
+            return;
+        }
     }
+    //Thread isn't running, remove the thread from its old list
+    threadList[thread->schedData.priority.get()].removeFast(thread);
+    //Set priority to the new value
+    thread->schedData.priority=newPriority;
+    //Last insert the thread in the new list
+    threadList[newPriority.get()].push_back(thread);
 }
 
-void PriorityScheduler::IRQsetIdleThread(Thread *idleThread)
+void PriorityScheduler::IRQsetIdleThread(int whichCore, Thread *idleThread)
 {
     idleThread->schedData.priority=-1;
-    idle=idleThread;
+    idle[whichCore]=idleThread;
 }
 
 long long PriorityScheduler::IRQgetNextPreemption()
@@ -133,8 +137,9 @@ void PriorityScheduler::IRQrunScheduler()
         pendingWakeup=true;
         return;
     }
+    int coreId=getCurrentCoreId();
     //Add the previous thread to the back of the priority list (round-robin)
-    Thread *prev=const_cast<Thread*>(runningThread);
+    Thread *prev=const_cast<Thread*>(runningThread[coreId]);
     int prevPriority=prev->schedData.priority.get();
     if(prevPriority!=-1) threadList[prevPriority].push_back(prev);
     for(int i=PRIORITY_MAX-1;i>=0;i--)
@@ -143,7 +148,7 @@ void PriorityScheduler::IRQrunScheduler()
         {
             if(next->flags.isReady()==false) continue;
             //Found a READY thread, so run this one
-            runningThread=next;
+            runningThread[coreId]=next;
             #ifdef WITH_PROCESSES
             if(next->flags.isInUserspace()==false)
             {
@@ -170,8 +175,8 @@ void PriorityScheduler::IRQrunScheduler()
         }
     }
     //No thread found, run the idle thread
-    runningThread=idle;
-    ctxsave=idle->ctxsave;
+    runningThread[coreId]=idle[coreId];
+    ctxsave=idle[coreId]->ctxsave;
     #ifdef WITH_PROCESSES
     MPUConfiguration::IRQdisable();
     #endif //WITH_PROCESSES
@@ -184,7 +189,7 @@ void PriorityScheduler::IRQrunScheduler()
 }
 
 IntrusiveList<Thread> PriorityScheduler::threadList[PRIORITY_MAX];
-Thread *PriorityScheduler::idle=nullptr;
+Thread *PriorityScheduler::idle[CPU_NUM_CORES]={nullptr};
 
 } //namespace miosix
 

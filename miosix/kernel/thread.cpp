@@ -65,7 +65,7 @@ namespace miosix {
 //in portability.cpp, lock.cpp and by the schedulers.
 //These variables MUST NOT be used outside of those files
 
-volatile Thread *runningThread=nullptr;///<\internal Thread currently running
+volatile Thread *runningThread[CPU_NUM_CORES]={nullptr};///<\internal Threads currently running
 
 ///\internal True if there are threads in the DELETED status. Used by idle thread
 static volatile bool existDeleted=false;
@@ -91,7 +91,7 @@ extern unsigned char globalIntrNestLockHoldingCore;
  * Idle thread. Created when the kernel is started, it physically deallocates
  * memory for deleted threads, and puts the cpu in sleep mode.
  */
-void *idleThread(void *argv)
+void *idleThreadCore0(void *argv)
 {
     for(;;)
     {
@@ -127,6 +127,22 @@ void *idleThread(void *argv)
     }
     return 0; //Just to avoid a compiler warning
 }
+
+#ifdef WITH_SMP
+/**
+ * \internal
+ * Idle thread for cores other than the core 0, does even less
+ */
+void *idleThreadOtherCores(void *argv)
+{
+    for(;;)
+    {
+        #ifdef WITH_SLEEP
+        sleepCpu();
+        #endif //WITH_SLEEP
+    }
+}
+#endif
 
 /**
  * \internal
@@ -169,7 +185,15 @@ void IRQstartKernel()
     if(Scheduler::PKaddThread(main,MAIN_PRIORITY)==false) errorHandler(UNEXPECTED);
 
     // Idle thread needs to be set after main (see control_scheduler.cpp)
-    Scheduler::IRQsetIdleThread(idle);
+    Scheduler::IRQsetIdleThread(0,idle);
+    #ifdef WITH_SMP
+    for(int i=1;i<CPU_NUM_CORES;i++)
+    {
+        idle=Thread::doCreate(idleThreadOtherCores,STACK_IDLE,nullptr,Thread::DEFAULT,true);
+        if(idle==nullptr) errorHandler(OUT_OF_MEMORY);
+        Scheduler::IRQsetIdleThread(i,idle);
+    }
+    #endif //WITH_SMP
     
     // Make the C standard library use per-thread reeentrancy structure
     setCReentrancyCallback(Thread::getCReent);
@@ -222,8 +246,10 @@ bool IRQwakeThreads(long long currentTime)
         //Wake both threads doing absoluteSleep() and timedWait()
         Thread *t=(*it)->thread;
         t->flags.IRQclearSleepAndWait(t);
-        if(const_cast<Thread*>(runningThread)->IRQgetPriority()<t->IRQgetPriority())
-            result=true;
+        auto wokenPrio=t->IRQgetPriority();
+        for(int i=0;i<CPU_NUM_CORES;i++)
+            if(const_cast<Thread*>(runningThread[i])->IRQgetPriority()<wokenPrio)
+                result=true;
         it=sleepingList.erase(it);
     }
     return result;
@@ -304,7 +330,7 @@ void Thread::nanoSleepUntil(long long absoluteTimeNs)
     //the timer isr will wake threads, modifying the sleepingList
     {
         FastGlobalIrqLock dLock;
-        SleepData d(const_cast<Thread*>(runningThread),absoluteTimeNs);
+        SleepData d(const_cast<Thread*>(runningThread[getCurrentCoreId()]),absoluteTimeNs);
         d.thread->flags.IRQsetSleep(d.thread); //Sleeping thread: set sleep flag
         IRQaddToSleepingList(&d);
         {
@@ -321,7 +347,7 @@ void Thread::wait()
     //pausing the kernel is not enough because of IRQwait and IRQwakeup
     {
         FastGlobalIrqLock lock;
-        Thread *cur=const_cast<Thread*>(runningThread);
+        Thread *cur=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
         cur->flags.IRQsetWait(cur,true);
     }
     Thread::yield();
@@ -380,7 +406,7 @@ Thread *Thread::IRQgetCurrentThread()
 
     //Implementation is the same as getCurrentThread, but to keep a consistent
     //interface this method is duplicated
-    Thread *result=const_cast<Thread*>(runningThread);
+    Thread *result=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
     if(result) return result;
     //This function must always return a pointer to a valid thread. The first
     //time this is called before the kernel is started, however, runningThread
@@ -451,7 +477,7 @@ void Thread::terminate()
 bool Thread::testTerminate()
 {
     //Just reading, no need for critical section
-    return const_cast<Thread*>(runningThread)->flags.isDeleting();
+    return const_cast<Thread*>(runningThread[getCurrentCoreId()])->flags.isDeleting();
 }
 
 void Thread::detach()
@@ -488,7 +514,7 @@ bool Thread::join(void** result)
 {
     {
         FastGlobalIrqLock dLock;
-        Thread *cur=const_cast<Thread*>(runningThread);
+        Thread *cur=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
         if(this==cur) return false;
         if(Thread::IRQexists(this)==false) return false;
         if(this->flags.isDetached()) return false;
@@ -538,7 +564,7 @@ int Thread::getStackSize()
 
 void Thread::IRQstackOverflowCheck()
 {
-    Thread *cur=const_cast<Thread*>(runningThread);
+    Thread *cur=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
     const unsigned int watermarkSize=WATERMARK_LEN/sizeof(unsigned int);
     #ifdef WITH_PROCESSES
     if(cur->flags.isInUserspace())
@@ -564,7 +590,7 @@ void Thread::IRQstackOverflowCheck()
 
 void Thread::IRQhandleSvc()
 {
-    Thread *cur=const_cast<Thread*>(runningThread);
+    Thread *cur=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
     if(cur->proc==kernel) errorHandler(UNEXPECTED);
     //We know it's not the kernel, so the cast is safe
     auto *proc=static_cast<Process*>(cur->proc);
@@ -596,7 +622,7 @@ void Thread::IRQhandleSvc()
 
 bool Thread::IRQreportFault(const FaultData& fault)
 {
-    Thread *cur=const_cast<Thread*>(runningThread);
+    Thread *cur=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
     if(cur->flags.isInUserspace()==false || cur->proc==kernel) return false;
     //We know it's not the kernel, so the cast is safe
     auto *proc=static_cast<Process*>(cur->proc);
@@ -611,7 +637,7 @@ bool Thread::IRQreportFault(const FaultData& fault)
 SyscallParameters Thread::switchToUserspace()
 {
     portableSwitchToUserspace();
-    SyscallParameters result(runningThread->userCtxsave);
+    SyscallParameters result(runningThread[getCurrentCoreId()]->userCtxsave);
     return result;
 }
 
@@ -657,13 +683,14 @@ void Thread::setupUserspaceContext(unsigned int entry, int argc, void *argvSp,
     char *base=reinterpret_cast<char*>(argvSp)-stackSize-WATERMARK_LEN;
     memset(base, WATERMARK_FILL, WATERMARK_LEN);
     memset(base+WATERMARK_LEN, STACK_FILL, stackSize);
-    runningThread->userWatermark=reinterpret_cast<unsigned int*>(base);
+    Thread *cur=runningThread[getCurrentCoreId()];
+    cur->userWatermark=reinterpret_cast<unsigned int*>(base);
     //Initialize registers
     //NOTE: for the main thread in a process userWatermark is also the end of
     //the heap, used by _sbrk_r. When we'll implement threads in processes that
     //pointer will just point to the watermark end of the thread, but userspace
     //threads can just ignore that value so we'll pass it unconditionally
-    initUserThreadCtxsave(runningThread->userCtxsave,entry,argc,argvSp,envp,
+    initUserThreadCtxsave(cur->userCtxsave,entry,argc,argvSp,envp,
                           gotBase,runningThread->userWatermark);
 }
 
@@ -761,7 +788,7 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
         errorLog("***An exception propagated through a thread\n");
     }
     #endif //__NO_EXCEPTIONS
-    Thread* cur=const_cast<Thread*>(runningThread);
+    Thread* cur=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
 
     #ifdef WITH_PTHREAD_KEYS
     callPthreadKeyDestructors(cur->pthreadKeyValues);
@@ -797,7 +824,7 @@ void Thread::threadLauncher(void *(*threadfunc)(void*), void *argv)
 
 void Thread::IRQglobalIrqUnlockAndWaitImpl()
 {
-    Thread *cur=const_cast<Thread*>(runningThread);
+    Thread *cur=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
     cur->flags.IRQsetWait(cur,true);
     auto savedNesting=globalLockNesting; //For GlobalIrqLock
     globalLockNesting=0;
@@ -819,7 +846,7 @@ void Thread::IRQglobalIrqUnlockAndWaitImpl()
 TimedWaitResult Thread::IRQglobalIrqUnlockAndTimedWaitImpl(long long absoluteTimeNs)
 {
     absoluteTimeNs=std::max(absoluteTimeNs,100000LL);
-    Thread *t=const_cast<Thread*>(runningThread);
+    Thread *t=const_cast<Thread*>(runningThread[getCurrentCoreId()]);
     SleepData sleepData(t,absoluteTimeNs);
     t->flags.IRQsetWait(t,true); //timedWait thread: set wait flag
     IRQaddToSleepingList(&sleepData);
@@ -857,11 +884,12 @@ Thread *Thread::allocateIdleThread()
     //there are no concurrency issues, not even with interrupts
 
     // Create the idle and main thread
-    auto *idle=Thread::doCreate(idleThread,STACK_IDLE,nullptr,Thread::DEFAULT,true);
+    auto *idle=Thread::doCreate(idleThreadCore0,STACK_IDLE,nullptr,Thread::DEFAULT,true);
     if(idle==nullptr) errorHandler(OUT_OF_MEMORY);
 
-    // runningThread must point to a valid thread, so we make it point to the the idle one
-    runningThread=idle;
+    // runningThread must point to a valid thread, so we make it point to the
+    // the idle one. Moreover, we must be on core 0 during boot
+    runningThread[0]=idle;
     return idle;
 }
 

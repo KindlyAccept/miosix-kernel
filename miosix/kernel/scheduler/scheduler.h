@@ -131,13 +131,17 @@ public:
      * This is called before the kernel is started to by the kernel. The given
      * thread is the idle thread, to be run all the times where no other thread
      * can run.
+     * \param whichCore either 0 on single core platforms, or specify for which
+     * core this idle thread is meant to be used. Note that it is expected that
+     * during boot exactly one idle thread for each core is given to the
+     * scheduler
      */
-    static void IRQsetIdleThread(Thread *idleThread)
+    static void IRQsetIdleThread(int whichCore, Thread *idleThread)
     {
         #ifdef WITH_CPU_TIME_COUNTER
-        CPUTimeCounter::IRQaddIdleThread(idleThread);
+        CPUTimeCounter::IRQaddIdleThread(whichCore,idleThread);
         #endif
-        return T::IRQsetIdleThread(idleThread);
+        return T::IRQsetIdleThread(whichCore,idleThread);
     }
 
     /**
