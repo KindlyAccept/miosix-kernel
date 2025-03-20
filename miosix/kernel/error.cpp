@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2010 by Terraneo Federico                               *
+ *   Copyright (C) 2025 by Daniele Cattaneo                                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -26,21 +27,26 @@
  ***************************************************************************/
 
 #include "error.h"
+#include "config/miosix_settings.h"
 #include "lock.h"
 #include "interfaces/poweroff.h"
+#include "interfaces_private/smp.h"
 #include "logging.h"
 
 namespace miosix {
 
 void errorHandler(Error e)
 {
-    // Here we must be careful since this function can be called within an
-    // interrupt routine, and disabling interrupts within an interrupt
-    // routine must be avoided.
-    bool interrupts=areInterruptsEnabled();
-    if(interrupts) fastDisableIrq(); //FIXME: think about what happens in the multi-core case
-
-    //Recoverable errors: None
+    // Disable interrupts
+    fastDisableIrq();
+    #ifdef WITH_SMP
+    // On multicore try to make the other cores hang up. Do NOT take the GIL,
+    // that may cause a deadlock if it is already taken by this core or the
+    // other one. This could cause problems of course but this is an emergency
+    // situation anyway. The only real risk is corruption on the serial while
+    // logging.
+    lockupOtherCores();
+    #endif
     
     //Unrecoverable errors
     switch(e)
@@ -77,8 +83,6 @@ void errorHandler(Error e)
             break;
     }
     IRQsystemReboot();
-
-    //if(interrupts) fastEnableIrq(); // Not needed since no recoverable errors
 }
 
 } //namespace miosix
