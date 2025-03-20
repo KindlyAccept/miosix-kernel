@@ -138,7 +138,6 @@ __attribute__((noreturn)) void IRQcontinueInitCore1()
     // Signal to the other core that we are done with setup
     __DSB();
     (unsigned long)sio_hw->spinlock[RP2040HwSpinlocks::InitCoreSync];
-    __enable_irq();
     // Call the main function, which shouldn't return. If it does, hang up
     f(arg);
     for(;;) ;

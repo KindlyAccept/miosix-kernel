@@ -54,7 +54,8 @@ namespace miosix {
 /**
  * Starts symmetric multi-processing (SMP) support, enabling all cores and
  * initializing their state. This function must be called while holding the
- * global interrupt lock.
+ * Global Irq Lock (GIL). The main functions for the other cores will start
+ * executing with interrupts disabled, but with the GIL not taken.
  * 
  * \param stackPtrs An array with one initial process stack pointer
  *                  for each core except core 0.
