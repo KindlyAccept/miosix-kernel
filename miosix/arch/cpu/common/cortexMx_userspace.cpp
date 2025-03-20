@@ -36,17 +36,20 @@ using namespace std;
 
 namespace miosix {
 
+#ifdef WITH_PROCESSES
+
 // NOTE: workaround for weird compiler bug. See header file for an explanation.
 #ifndef __OPTIMIZE__
-void portableSwitchToUserspace()
+void __attribute__((naked)) portableSwitchToUserspace()
 {
-    asm volatile("movs r7, #1\n\t"
-                 "svc  0"
-                 :::"r7", "cc", "memory");
+    // It gets worse, the r7 error pops up at random even when not inlining, the
+    // function, so switch to a naked function
+    asm volatile("push {r7, lr} \n\t"
+                 "movs r7, #1   \n\t"
+                 "svc  0        \n\t"
+                 "pop  {r7, pc} \n\t");
 }
 #endif //__OPTIMIZE__
-
-#ifdef WITH_PROCESSES
 
 void initUserThreadCtxsave(unsigned int *ctxsave, unsigned int pc, int argc,
     void *argvSp, void *envp, unsigned int *gotBase, unsigned int *heapEnd)
