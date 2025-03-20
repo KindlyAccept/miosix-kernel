@@ -199,6 +199,7 @@ void IRQstartKernel()
         coreBootEntryPoints[i-1]=&IRQportableStartKernel;
         coreBootArgs[i-1]=nullptr;
         Scheduler::IRQsetIdleThread(i,idle);
+        runningThread[i]=idle;
     }
     #endif //WITH_SMP
     
