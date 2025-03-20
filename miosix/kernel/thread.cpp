@@ -166,7 +166,7 @@ void IRQstartKernel()
     #endif //WITH_PROCESSES
     
     // As a side effect this function allocates the idle thread and makes
-    // runningThread point to it. It's probably been called many times during
+    // runningThread point to it. It's probably been called at least once during
     // boot by the time we get here, but we can't be sure
     auto *idle=Thread::IRQgetCurrentThread();
     
@@ -177,34 +177,41 @@ void IRQstartKernel()
     idle->proc=kernel;
     #endif //WITH_PROCESSES
 
-    // Create the idle and main thread
+    // Create the main thread and add it to the scheduler.
     Thread *main;
     main=Thread::doCreate(mainLoader,MAIN_STACK_SIZE,nullptr,Thread::DEFAULT,true);
     if(main==nullptr) errorHandler(OUT_OF_MEMORY);
-    
-    // Add them to the scheduler
     if(Scheduler::PKaddThread(main,MAIN_PRIORITY)==false) errorHandler(UNEXPECTED);
 
     // Idle thread needs to be set after main (see control_scheduler.cpp)
     Scheduler::IRQsetIdleThread(0,idle);
+
+    // On SMP platforms, create and set idle threads for all other cores, and
+    // prepare the array of core main functions.
     #ifdef WITH_SMP
     void *coreBootStacks[CPU_NUM_CORES-1];
     void (*coreBootEntryPoints[CPU_NUM_CORES-1])();
     for(int i=1;i<CPU_NUM_CORES;i++)
     {
+        // Create idle thread and set it as running
         idle=Thread::doCreate(idleThreadOtherCores,STACK_IDLE,nullptr,Thread::DEFAULT,true);
         if(idle==nullptr) errorHandler(OUT_OF_MEMORY);
-        coreBootStacks[i-1]=reinterpret_cast<unsigned char*>(idle)-CTXSAVE_ON_STACK;
-        coreBootEntryPoints[i-1]=&IRQportableStartKernel;
         Scheduler::IRQsetIdleThread(i,idle);
         runningThread[i]=idle;
+        // Prepare initial stack and main. The core main does nothing but an
+        // initial context switch, so we re-use the idle thread stack to avoid
+        // allocating a temporary stack. The -CTXSAVE_ON_STACK is important
+        // to prevent the core setup code from corrupting the idle thread
+        // context prepared on the stack by Thread::doCreate.
+        coreBootStacks[i-1]=reinterpret_cast<unsigned char*>(idle)-CTXSAVE_ON_STACK;
+        coreBootEntryPoints[i-1]=&IRQportableStartKernel;
     }
     #endif //WITH_SMP
     
     // Make the C standard library use per-thread reeentrancy structure
     setCReentrancyCallback(Thread::getCReent);
     
-    // Dispatch the task to the architecture-specific function
+    // Boot the other cores, and this core.
     kernelStarted=true;
     IRQinitSMP(coreBootStacks,coreBootEntryPoints);
     IRQportableStartKernel();
