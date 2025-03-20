@@ -152,15 +152,15 @@ void PriorityScheduler::IRQrunScheduler()
             #ifdef WITH_PROCESSES
             if(next->flags.isInUserspace()==false)
             {
-                ctxsave=next->ctxsave;
+                ctxsave[coreId]=next->ctxsave;
                 MPUConfiguration::IRQdisable();
             } else {
-                ctxsave=next->userCtxsave;
+                ctxsave[coreId]=next->userCtxsave;
                 //A kernel thread is never in userspace, so the cast is safe
                 static_cast<Process*>(next->proc)->mpu.IRQenable();
             }
             #else //WITH_PROCESSES
-            ctxsave=next->ctxsave;
+            ctxsave[coreId]=next->ctxsave;
             #endif //WITH_PROCESSES
             #ifndef WITH_CPU_TIME_COUNTER
             IRQsetNextPreemption(false);
@@ -176,7 +176,7 @@ void PriorityScheduler::IRQrunScheduler()
     }
     //No thread found, run the idle thread
     runningThread[coreId]=idle[coreId];
-    ctxsave=idle[coreId]->ctxsave;
+    ctxsave[coreId]=idle[coreId]->ctxsave;
     #ifdef WITH_PROCESSES
     MPUConfiguration::IRQdisable();
     #endif //WITH_PROCESSES

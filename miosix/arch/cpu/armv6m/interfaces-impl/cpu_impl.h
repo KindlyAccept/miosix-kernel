@@ -63,11 +63,15 @@
  * The failure was only observed within the exception_test() in the testsuite
  * running on the stm32f429zi_stm32f4discovery.
  */
+#warning adapted only works for rp2040
 #define saveContext()                                                        \
     asm volatile("push  {lr}             \n\t" /*save lr on MAIN stack*/      \
                  "mrs   r1,  psp         \n\t" /*get PROCESS stack pointer*/  \
+                 "ldr   r2,  =0xd0000000 \n\t" /* CPUID */                    \
+                 "ldr   r2,  [r2]        \n\t"                                \
+                 "lsl   r2,  #2          \n\r"                                \
                  "ldr   r0,  =ctxsave    \n\t" /*get current context*/        \
-                 "ldr   r0,  [r0]        \n\t"                                \
+                 "ldr   r0,  [r0, r2]    \n\t"                                \
                  "stmia r0!, {r1,r4-r7}  \n\t" /*save PROCESS sp + r4-r7*/    \
                  "mov   r4,  r8          \n\t"                                \
                  "mov   r5,  r9          \n\t"                                \
@@ -84,8 +88,11 @@
  * prevent the compiler from generating context restore.
  */
 #define restoreContext()                                                     \
-    asm volatile("ldr   r0,  =ctxsave    \n\t" /*get current context*/        \
-                 "ldr   r0,  [r0]        \n\t"                                \
+    asm volatile("ldr   r2,  =0xd0000000 \n\t" /* CPUID */                    \
+                 "ldr   r2,  [r2]        \n\t"                                \
+                 "lsl   r2,  #2          \n\r"                                \
+                 "ldr   r0,  =ctxsave    \n\t" /*get current context*/        \
+                 "ldr   r0,  [r0, r2]    \n\t"                                \
                  "ldmia r0!, {r1,r4-r7}  \n\t" /*pop r8-r11 saving in r4-r7*/ \
                  "msr   psp, r1          \n\t" /*restore PROCESS sp*/         \
                  "ldmia r0,  {r0-r3}     \n\t"                                \

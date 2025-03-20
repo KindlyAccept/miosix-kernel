@@ -32,6 +32,8 @@
 #error "If your code depends on a private header, it IS broken."
 #endif //COMPILING_MIOSIX
 
+#include "interfaces/cpu_const.h"
+
 /**
  * \addtogroup Interfaces
  * \{
@@ -65,7 +67,7 @@
  * It is declared in thread.cpp
  */
 extern "C" {
-extern volatile unsigned int *ctxsave;
+extern volatile unsigned int *ctxsave[miosix::CPU_NUM_CORES];
 }
 
 namespace miosix {

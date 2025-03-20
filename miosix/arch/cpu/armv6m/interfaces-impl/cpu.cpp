@@ -55,7 +55,7 @@ void IRQportableStartKernel()
     //create a temporary space to save current registers. This data is useless
     //since there's no way to stop the sheduler, but we need to save it anyway.
     unsigned int s_ctxsave[miosix::CTXSAVE_SIZE];
-    ctxsave=s_ctxsave;//make global ctxsave point to it
+    ctxsave[getCurrentCoreId()]=s_ctxsave;//make global ctxsave point to it
     //There's no __enable_fault_irq() in ARMv6M
     __enable_irq();
     miosix::Thread::yield();

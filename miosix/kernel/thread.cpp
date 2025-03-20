@@ -55,7 +55,7 @@
  * It is defined in the header interfaces_private/cpu.h
  */
 extern "C" {
-volatile unsigned int *ctxsave;
+volatile unsigned int *ctxsave[miosix::CPU_NUM_CORES];
 }
 
 
