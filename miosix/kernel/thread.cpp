@@ -37,6 +37,7 @@
 #include "interfaces_private/userspace.h"
 #include "interfaces_private/os_timer.h"
 #include "interfaces_private/sleep.h"
+#include "interfaces_private/smp.h"
 #include "timeconversion.h"
 #include "pthread_private.h"
 #include <stdexcept>
@@ -187,10 +188,16 @@ void IRQstartKernel()
     // Idle thread needs to be set after main (see control_scheduler.cpp)
     Scheduler::IRQsetIdleThread(0,idle);
     #ifdef WITH_SMP
+    void *coreBootStacks[CPU_NUM_CORES-1];
+    void (*coreBootEntryPoints[CPU_NUM_CORES-1])(void*);
+    void *coreBootArgs[CPU_NUM_CORES-1];
     for(int i=1;i<CPU_NUM_CORES;i++)
     {
         idle=Thread::doCreate(idleThreadOtherCores,STACK_IDLE,nullptr,Thread::DEFAULT,true);
         if(idle==nullptr) errorHandler(OUT_OF_MEMORY);
+        coreBootStacks[i-1]=const_cast<unsigned int*>(idle->getStackBottom());
+        coreBootEntryPoints[i-1]=&IRQportableStartKernel;
+        coreBootArgs[i-1]=nullptr;
         Scheduler::IRQsetIdleThread(i,idle);
     }
     #endif //WITH_SMP
@@ -200,7 +207,8 @@ void IRQstartKernel()
     
     // Dispatch the task to the architecture-specific function
     kernelStarted=true;
-    IRQportableStartKernel();
+    IRQinitSMP(coreBootStacks,coreBootEntryPoints,coreBootArgs);
+    IRQportableStartKernel(nullptr);
 }
 
 //These are not implemented here, but in the platform/board-specific os_timer.

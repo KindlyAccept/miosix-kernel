@@ -105,7 +105,7 @@ void initKernelThreadCtxsave(unsigned int *ctxsave, void (*pc)(void *(*)(void*),
  * code that uses GlobalIrqLock, such as general purpose driver classes
  * that would be ran either before or after start of the kernel.
  */
-void IRQportableStartKernel();
+void IRQportableStartKernel(void*);
 
 /**
  * \internal

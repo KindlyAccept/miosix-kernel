@@ -50,7 +50,7 @@ void initKernelThreadCtxsave(unsigned int *ctxsave, void (*pc)(void *(*)(void*),
     //NOTE: on armv6m ctxsave does not contain lr
 }
 
-void IRQportableStartKernel()
+void IRQportableStartKernel(void*)
 {
     //create a temporary space to save current registers. This data is useless
     //since there's no way to stop the sheduler, but we need to save it anyway.
