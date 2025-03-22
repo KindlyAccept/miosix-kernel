@@ -140,7 +140,9 @@ private:
      */
     static void remove(Thread *thread);
 
-    static Thread *head;///<\internal Head of threads list, ordered by deadline
+    static Thread *head;///<\internal Head of Real Time threads list, ordered by deadline
+    static Thread *headNRT; ///< \internal Head of Non Real Time threads circular list
+    static Thread *idle;
 };
 
 } //namespace miosix

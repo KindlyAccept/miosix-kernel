@@ -60,18 +60,31 @@ bool EDFScheduler::PKaddThread(Thread *thread, EDFSchedulerPriority priority)
 
 bool EDFScheduler::PKexists(Thread *thread)
 {
+    // Search in the RT task list
     Thread *walk=head;
     while(walk!=nullptr)
     {
         if(walk==thread && (!walk->flags.isDeleted())) return true;
         walk=walk->schedData.next;
     }
+
+    // Search in the NRT task list (circular list)
+    if(headNRT != nullptr)
+    {
+        Thread *start = headNRT;
+        Thread *walkNRT = headNRT;
+        do {
+            if(walkNRT == thread && !walkNRT->flags.isDeleted()) return true;
+            walkNRT = walkNRT->schedData.next;
+        } while(walkNRT != start); // Stop when we complete a full loop
+    }
+
     return false;
 }
 
 void EDFScheduler::PKremoveDeadThreads()
 {
-    //Delete all threads at the beginning of the list
+    // Handle RT tasks (head list)
     for(;;)
     {
         if(head==nullptr) errorHandler(UNEXPECTED); //Empty list is wrong.
@@ -96,6 +109,54 @@ void EDFScheduler::PKremoveDeadThreads()
             free(base); //Delete ALL thread memory
         } else walk=walk->schedData.next;
     }
+
+    // Handle NRT tasks (headNRT circular list)
+    if(headNRT != nullptr)
+    {
+        bool firstPass = true;
+        Thread *prev = headNRT;
+        Thread *curr = headNRT;
+
+        do {
+            if(curr->flags.isDeleted())
+            {
+                Thread *toBeDeleted = curr;
+                
+                if(curr == headNRT)
+                {
+                    if(headNRT->schedData.next == headNRT)
+                    {
+                        // Only one element in the circular list
+                        headNRT = nullptr;
+                        free(toBeDeleted->watermark);
+                        toBeDeleted->~Thread();
+                        return;
+                    } else {
+                        // Find the last node to fix circular list
+                        Thread *tail = headNRT;
+                        while(tail->schedData.next != headNRT)
+                        {
+                            tail = tail->schedData.next;
+                        }
+                        headNRT = headNRT->schedData.next;
+                        tail->schedData.next = headNRT;
+                    }
+                } else {
+                    prev->schedData.next = curr->schedData.next;
+                }
+
+                free(toBeDeleted->watermark);
+                toBeDeleted->~Thread();
+
+                curr = prev->schedData.next;
+            } else {
+                prev = curr;
+                curr = curr->schedData.next;
+            }
+
+            firstPass = false;
+        } while(curr != headNRT && !firstPass);
+    }
 }
 
 void EDFScheduler::PKsetPriority(Thread *thread,
@@ -109,7 +170,7 @@ void EDFScheduler::PKsetPriority(Thread *thread,
 void EDFScheduler::IRQsetIdleThread(Thread *idleThread)
 {
     idleThread->schedData.deadline=numeric_limits<long long>::max()-1;
-    add(idleThread);
+    idle = idleThread;
 }
 
 long long EDFScheduler::IRQgetNextPreemption()
@@ -117,14 +178,23 @@ long long EDFScheduler::IRQgetNextPreemption()
     return nextPreemption;
 }
 
-static void IRQsetNextPreemption()
+static void IRQsetNextPreemption(long long currentDeadline)
 {
-    if(sleepingList.empty()) nextPreemption=numeric_limits<long long>::max();
-    else nextPreemption=sleepingList.front()->wakeupTime;
+    long long first;
+    if(sleepingList.empty()) first = std::numeric_limits<long long>::max();
+    else first = sleepingList.front()->wakeupTime;
 
-    //We could not set an interrupt if the sleeping list is empty, but then we
-    //would spuriously run the scheduler at every rollover of the hardware timer
-    //and this could waste more cycles than setting the interrupt
+    long long t = IRQgetTime();
+
+    if(currentDeadline < std::numeric_limits<long long>::max() - 2)
+    {
+        // RT task, set preemption to its deadline
+        nextPreemption = first;
+    } else {
+        // NRT task, set preemption based on time slice
+        nextPreemption = t + MAX_TIME_SLICE;
+    }
+
     IRQosTimerSetInterrupt(nextPreemption);
 }
 
@@ -135,90 +205,187 @@ void EDFScheduler::IRQrunScheduler()
         pendingWakeup=true;
         return;
     }
+
     #ifdef WITH_CPU_TIME_COUNTER
     Thread *prev=const_cast<Thread*>(runningThread);
     #endif // WITH_CPU_TIME_COUNTER
+    
+    // Try to find a ready RT task first
     Thread *walk=head;
-    for(;;)
+    int selected=0;
+    while(walk!=nullptr)
     {
-        if(walk==nullptr) errorHandler(UNEXPECTED);
         if(walk->flags.isReady())
         {
-            runningThread=walk;
-            #ifdef WITH_PROCESSES
-            if(const_cast<Thread*>(runningThread)->flags.isInUserspace()==false)
-            {
-                ctxsave=runningThread->ctxsave;
-                MPUConfiguration::IRQdisable();
-            } else {
-                ctxsave=runningThread->userCtxsave;
-                //A kernel thread is never in userspace, so the cast is safe
-                static_cast<Process*>(runningThread->proc)->mpu.IRQenable();
-            }
-            #else //WITH_PROCESSES
-            ctxsave=runningThread->ctxsave;
-            #endif //WITH_PROCESSES
-            IRQsetNextPreemption();
-            #ifdef WITH_CPU_TIME_COUNTER
-            IRQprofileContextSwitch(prev->timeCounterData,walk->timeCounterData,
-                                    IRQgetTime());
-            #endif //WITH_CPU_TIME_COUNTER
-            return;
+            selected=1;
+            break;
         }
         walk=walk->schedData.next;
     }
+
+    // If no RT tasks are ready, check NRT tasks (round-robin list)
+    if(headNRT != nullptr && selected == 0)
+    {
+        Thread *start = headNRT;
+        do {
+            if(headNRT->flags.isReady())
+            {
+                walk = headNRT;
+                headNRT = headNRT->schedData.next; // Round-robin: move to next
+                selected = 1;
+                break;
+            }
+            headNRT = headNRT->schedData.next;
+        } while(headNRT != start);
+    }
+
+    // If no RT or NRT tasks are ready, run the idle thread
+    if(idle != nullptr && selected == 0)
+    {
+        walk = idle;
+        selected = 1;
+    } 
+
+    // if no RT, NRT or idle is available, Error (should never happen)
+    if(selected == 0) errorHandler(UNEXPECTED);
+   
+
+    runningThread = walk;
+
+    #ifdef WITH_PROCESSES
+    if(const_cast<Thread*>(runningThread)->flags.isInUserspace() == false)
+    {
+        ctxsave=runningThread->ctxsave;
+        MPUConfiguration::IRQdisable();
+    } else {
+        ctxsave=runningThread->userCtxsave;
+        //A kernel thread is never in userspace, so the cast is safe
+        static_cast<Process*>(runningThread->proc)->mpu.IRQenable();
+    }
+    #else // WITH_PROCESSES
+    ctxsave=runningThread->ctxsave;
+    #endif // WITH_PROCESSES
+
+    IRQsetNextPreemption(const_cast<Thread*>(runningThread)->schedData.deadline.get());
+
+    #ifdef WITH_CPU_TIME_COUNTER
+    IRQprofileContextSwitch(prev->timeCounterData, walk->timeCounterData,
+                            IRQgetTime());
+    #endif // WITH_CPU_TIME_COUNTER
 }
 
 void EDFScheduler::add(Thread *thread)
 {
+
     long long newDeadline=thread->schedData.deadline.get();
-    if(head==nullptr)
+
+    if(newDeadline == std::numeric_limits<long long>::max()-2) // NRT tasks
     {
-        head=thread;
-        return;
-    }
-    if(newDeadline<=head->schedData.deadline.get())
-    {
-        thread->schedData.next=head;
-        head=thread;
-        return;
-    }
-    Thread *walk=head;
-    for(;;)
-    {
-        if(walk->schedData.next==nullptr || newDeadline<=
-           walk->schedData.next->schedData.deadline.get())
+        if(headNRT==nullptr)
         {
-            thread->schedData.next=walk->schedData.next;
-            walk->schedData.next=thread;
-            break;
+            headNRT=thread;
+            thread->schedData.next=thread;//Circular list
+        } else {
+            thread->schedData.next=headNRT->schedData.next;
+            headNRT->schedData.next=thread;
         }
-        walk=walk->schedData.next;
+
+        return;
+
+    } else if(newDeadline < std::numeric_limits<long long>::max()-2) // RT Tasks
+    {
+        if(head==nullptr)
+        {
+            head=thread;
+            return;
+        }
+        if(newDeadline<=head->schedData.deadline.get())
+        {
+            thread->schedData.next=head;
+            head=thread;
+
+            return;
+        }
+        Thread *walk=head;
+        for(;;)
+        {
+            if(walk->schedData.next==nullptr || newDeadline<=
+            walk->schedData.next->schedData.deadline.get())
+            {
+                thread->schedData.next=walk->schedData.next;
+                walk->schedData.next=thread;
+                break;
+            }
+            walk=walk->schedData.next;
+        }
     }
+
 }
 
 void EDFScheduler::remove(Thread *thread)
 {
-    if(head==nullptr) errorHandler(UNEXPECTED);
-    if(head==thread)
+    long long deadline = thread->schedData.deadline.get();
+
+    if(deadline == std::numeric_limits<long long>::max() - 2) // NRT tasks
     {
-        head=head->schedData.next;
-        return;
-    }
-    Thread *walk=head;
-    for(;;)
-    {
-        if(walk->schedData.next==nullptr) errorHandler(UNEXPECTED);
-        if(walk->schedData.next==thread)
+        if(headNRT == nullptr) errorHandler(UNEXPECTED);
+
+        if(headNRT == thread)
         {
-            walk->schedData.next=walk->schedData.next->schedData.next;
-            break;
+            if(headNRT->schedData.next == headNRT)
+            {
+                // Only one element in the circular list
+                headNRT = nullptr;
+            } else {
+                Thread *tail = headNRT;
+                while(tail->schedData.next != headNRT)
+                {
+                    tail = tail->schedData.next;
+                }
+                headNRT = headNRT->schedData.next;
+                tail->schedData.next = headNRT;
+            }
+            return;
         }
-        walk=walk->schedData.next;
+
+        Thread *walk = headNRT;
+        for(;;)
+        {
+            if(walk->schedData.next == headNRT) errorHandler(UNEXPECTED);
+            if(walk->schedData.next == thread)
+            {
+                walk->schedData.next = walk->schedData.next->schedData.next;
+                break;
+            }
+            walk = walk->schedData.next;
+        }
+    }
+    else // RT tasks
+    {
+        if(head == nullptr) errorHandler(UNEXPECTED);
+        if(head == thread)
+        {
+            head = head->schedData.next;
+            return;
+        }
+
+        Thread *walk = head;
+        for(;;)
+        {
+            if(walk->schedData.next == nullptr) errorHandler(UNEXPECTED);
+            if(walk->schedData.next == thread)
+            {
+                walk->schedData.next = walk->schedData.next->schedData.next;
+                break;
+            }
+            walk = walk->schedData.next;
+        }
     }
 }
 
 Thread *EDFScheduler::head=nullptr;
+Thread *EDFScheduler::headNRT=nullptr;
+Thread *EDFScheduler::idle=nullptr;
 
 } //namespace miosix
 

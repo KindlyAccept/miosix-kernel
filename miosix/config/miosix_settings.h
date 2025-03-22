@@ -35,6 +35,7 @@
  * miosix/config/arch/architecture name/board name/board_settings.h
  */
 #include "board_settings.h"
+#include <limits>
 
 /**
  * \internal
@@ -223,26 +224,32 @@ static_assert(STACK_DEFAULT_FOR_PTHREAD>=STACK_MIN,"");
 static_assert(MIN_PROCESS_STACK_SIZE>=STACK_MIN,"");
 static_assert(SYSTEM_MODE_PROCESS_STACK_SIZE>=STACK_MIN,"");
 
-/// Number of priorities (MUST be >1)
+// The meaning of a thread's priority depends on the chosen scheduler.
+#ifdef SCHED_TYPE_PRIORITY
+/// The constant PRIORITY_MAX defines the number of priorities (MUST be >1)
 /// PRIORITY_MAX-1 is the highest priority, 0 is the lowest. -1 is reserved as
 /// the priority of the idle thread.
-/// The meaning of a thread's priority depends on the chosen scheduler.
-#ifdef SCHED_TYPE_PRIORITY
-//Can be modified, but a high value makes context switches more expensive
+/// Can be modified, but a high value makes context switches more expensive
 const short int PRIORITY_MAX=4;
+/// Priority of main()
+const unsigned char MAIN_PRIORITY=1;
 #elif defined(SCHED_TYPE_CONTROL_BASED)
-//Don't touch, the limit is due to the fixed point implementation
-//It's not needed for if floating point is selected, but kept for consistency
+/// The constant PRIORITY_MAX defines the number of priorities (MUST be >1)
+/// PRIORITY_MAX-1 is the highest priority, 0 is the lowest. -1 is reserved as
+/// the priority of the idle thread.
+/// Don't change this value, the limit is due to the fixed point implementation
+/// It's not needed for if floating point is selected, but kept for consistency
 const short int PRIORITY_MAX=64;
+/// Priority of main()
+const unsigned char MAIN_PRIORITY=1;
 #else //SCHED_TYPE_EDF
-//Doesn't exist for this kind of scheduler
+/// The EDF scheduler redefines priorities as the thread absolute deadline.
+/// Additionally, the constant MAIN_PRIORITY is the default priority value for
+/// main() and all non-real-time tasks, which are scheduled using round-robin
+const long long MAIN_PRIORITY=std::numeric_limits<long long>::max()-2;
 #endif
 
-/// Priority of main()
-/// The meaning of a thread's priority depends on the chosen scheduler.
-const unsigned char MAIN_PRIORITY=1;
-
-#ifdef SCHED_TYPE_PRIORITY
+#if defined(SCHED_TYPE_PRIORITY) || defined(SCHED_TYPE_EDF)
 /// Maximum thread time slice in nanoseconds, after which preemption occurs
 const unsigned int MAX_TIME_SLICE=1000000;
 #endif //SCHED_TYPE_PRIORITY
