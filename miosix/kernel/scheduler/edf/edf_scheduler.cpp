@@ -294,6 +294,7 @@ void EDFScheduler::add(Thread *thread)
     {
         if(head==nullptr)
         {
+            thread->schedData.next=nullptr;
             head=thread;
             return;
         }
