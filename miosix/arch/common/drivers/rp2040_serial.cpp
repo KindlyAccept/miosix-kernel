@@ -194,6 +194,7 @@ void RP2040PL011Serial::commonInit(int number, int baudrate)
 
 void RP2040PL011Serial::IRQhandleInterrupt()
 {
+    FastGlobalLockFromIrq dLock;
     uint32_t flags = uart->mis;
     if(flags & UART_UARTMIS_TXMIS_BITS)
     {

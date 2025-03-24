@@ -425,6 +425,7 @@ void __attribute__((naked)) Reset_Handler()
 
 void NMI_Handler()
 {
+    FastGlobalLockFromIrq lock;
     IRQerrorLog("\r\n***Unexpected NMI\r\n");
     IRQsystemReboot();
 }
@@ -439,10 +440,12 @@ void __attribute__((naked)) HardFault_Handler()
 
 void __attribute__((noinline)) hardfaultImpl()
 {
+    FastGlobalLockFromIrq lock;
     if(Thread::IRQreportFault(FaultData(fault::HARDFAULT))) return;
 #else //WITH_PROCESSES
 void HardFault_Handler()
 {
+    FastGlobalLockFromIrq lock;
 #endif //WITH_PROCESSES
     #ifdef WITH_ERRLOG
     IRQerrorLog("\r\n***Unexpected HardFault @ ");
@@ -474,6 +477,7 @@ void __attribute__((noinline)) memManageImpl()
 void MemManage_Handler()
 #endif //WITH_PROCESSES
 {
+    FastGlobalLockFromIrq lock;
     #if defined(WITH_PROCESSES) || defined(WITH_ERRLOG)
     unsigned int cfsr=SCB->CFSR;
     #endif //WITH_PROCESSES || WITH_ERRLOG
@@ -534,6 +538,7 @@ void __attribute__((noinline)) busFaultImpl()
 void BusFault_Handler()
 #endif //WITH_PROCESSES
 {
+    FastGlobalLockFromIrq lock;
     #if defined(WITH_PROCESSES) || defined(WITH_ERRLOG)
     unsigned int cfsr=SCB->CFSR;
     #endif //WITH_PROCESSES || WITH_ERRLOG
@@ -586,6 +591,7 @@ void __attribute__((noinline)) usageFaultImpl()
 void UsageFault_Handler()
 #endif //WITH_PROCESSES
 {
+    FastGlobalLockFromIrq lock;
     #if defined(WITH_PROCESSES) || defined(WITH_ERRLOG)
     unsigned int cfsr=SCB->CFSR;
     #endif //WITH_PROCESSES || WITH_ERRLOG
@@ -629,6 +635,7 @@ void UsageFault_Handler()
 
 void DebugMon_Handler()
 {
+    FastGlobalLockFromIrq lock;
     #ifdef WITH_ERRLOG
     IRQerrorLog("\r\n***Unexpected DebugMon @ ");
     printUnsignedInt(tryGetKernelThreadProgramCounter());
@@ -648,12 +655,14 @@ void __attribute__((naked)) SVC_Handler()
 
 void __attribute__((noinline)) svcImpl()
 {
+    FastGlobalLockFromIrq lock;
     Thread::IRQstackOverflowCheck();
     Thread::IRQhandleSvc();
 }
 #else //WITH_PROCESSES
 void SVC_Handler()
 {
+    FastGlobalLockFromIrq lock;
     #ifdef WITH_ERRLOG
     IRQerrorLog("\r\n***Unexpected SVC @ ");
     printUnsignedInt(tryGetKernelThreadProgramCounter());
@@ -703,6 +712,7 @@ void __attribute__((naked)) PendSV_Handler()
 
 static void unexpectedInterrupt(void* arg)
 {
+    FastGlobalLockFromIrq lock;
     #ifdef WITH_ERRLOG
     auto entryNum=reinterpret_cast<unsigned int>(arg);
     IRQerrorLog("\r\n***Caught unregistered interrupt number ");
