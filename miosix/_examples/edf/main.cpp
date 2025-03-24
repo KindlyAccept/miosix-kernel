@@ -3,6 +3,10 @@
 #include <limits>
 #include <thread>
 
+#ifndef SCHED_TYPE_EDF
+#error Example is meant to be used with EDF scheduler
+#endif
+
 using namespace miosix;
 
 void rt_task_func1(void* arg) 
@@ -63,6 +67,5 @@ int main()
     
     printf("Threads created. Running test...\n");
 
-    queue.run();
-    return 0;
+    for(;;) Thread::wait();
 }
