@@ -184,15 +184,13 @@ static void IRQsetNextPreemption(long long currentDeadline)
     if(sleepingList.empty()) first = std::numeric_limits<long long>::max();
     else first = sleepingList.front()->wakeupTime;
 
-    long long t = IRQgetTime();
-
     if(currentDeadline < std::numeric_limits<long long>::max() - 2)
     {
         // RT task, set preemption to its deadline
         nextPreemption = first;
     } else {
         // NRT task, set preemption based on time slice
-        nextPreemption = t + MAX_TIME_SLICE;
+        nextPreemption = IRQgetTime() + MAX_TIME_SLICE;
     }
 
     IRQosTimerSetInterrupt(nextPreemption);
