@@ -30,6 +30,7 @@
 #include "kernel/process.h"
 #include "interfaces_private/cpu.h"
 #include "interfaces_private/os_timer.h"
+#include "interfaces_private/smp.h"
 #include <limits>
 
 #ifdef SCHED_TYPE_PRIORITY
@@ -171,6 +172,11 @@ void PriorityScheduler::IRQrunScheduler()
             //Remove the selected thread from the list. This invalidates
             //iterators sho it should be done last
             threadList[i].removeFast(next);
+            #ifdef WITH_SMP
+            //TODO also reschedule if other core has lower priority
+            if(runningThread[1-coreId]==idle[1-coreId])
+                IRQcallOnCore(1-coreId,reinterpret_cast<void (*)(void*)>(IRQinvokeScheduler),nullptr);
+            #endif //WITH_SMP
             return;
         }
     }
