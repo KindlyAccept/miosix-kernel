@@ -40,6 +40,7 @@ struct RP2040HwSpinlocks
     enum
     {
         GIL = 0,        // Global interrupt lock
+        PK,             // Pause kernel lock
         Atomics,        // Mutual exclusion of atomic operations
         InitCoreSync,   // Used at the end of SMP setup to synchronize the cores
         FirstFree,

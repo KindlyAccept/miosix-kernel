@@ -41,6 +41,7 @@ unsigned char globalLockNesting=0;
 
 #ifdef WITH_SMP
 unsigned char globalIntrNestLockHoldingCore=0xff;
+unsigned char globalPkNestLockHoldingCore=0xff;
 #endif //WITH_SMP
 
 ///\internal true if a thread wakeup occurs while the kernel is paused
@@ -104,13 +105,36 @@ void globalIrqUnlock() noexcept
 
 void pauseKernel() noexcept
 {
+    #ifdef WITH_SMP
+    unsigned char state=globalPkNestLockHoldingCore;
+    if(state==getCurrentCoreId())
+    {
+        if(kernelRunning==0xff) errorHandler(NESTING_OVERFLOW);
+        kernelRunning++;
+    } else {
+        IRQhwSpinlockAcquire(RP2040HwSpinlocks::PK); //TODO: need generic API
+        globalPkNestLockHoldingCore=getCurrentCoreId();
+        if(kernelRunning!=0) errorHandler(PAUSE_KERNEL_NESTING);
+        kernelRunning=1;
+    }
+    #else //WITH_SMP
     int old=atomicAddExchange(&kernelRunning,1);
     if(old>=0xff) errorHandler(NESTING_OVERFLOW);
+    #endif //WITH_SMP
 }
 
 void restartKernel() noexcept
 {
+    #ifdef WITH_SMP
+    int old=kernelRunning--;
+    if(kernelRunning==0)
+    {
+        globalPkNestLockHoldingCore=0xff;
+        IRQhwSpinlockRelease(RP2040HwSpinlocks::PK); //TODO: need generic API
+    }
+    #else //WITH_SMP
     int old=atomicAddExchange(&kernelRunning,-1);
+    #endif //WITH_SMP
     if(old<=0) errorHandler(PAUSE_KERNEL_NESTING);
     
     //Check globalLockNesting to allow pauseKernel() while interrupts
