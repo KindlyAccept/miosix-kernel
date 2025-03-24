@@ -85,9 +85,8 @@ bool EDFScheduler::PKexists(Thread *thread)
 void EDFScheduler::PKremoveDeadThreads()
 {
     // Handle RT tasks (head list)
-    for(;;)
+    while(head!=nullptr)
     {
-        if(head==nullptr) errorHandler(UNEXPECTED); //Empty list is wrong.
         if(head->flags.isDeleted()==false) break;
         Thread *toBeDeleted=head;
         head=head->schedData.next;
@@ -95,19 +94,22 @@ void EDFScheduler::PKremoveDeadThreads()
         toBeDeleted->~Thread();
         free(base); //Delete ALL thread memory
     }
-    //When we get here this->head is not null and does not need to be deleted
-    Thread *walk=head;
-    for(;;)
+    if(head!=nullptr)
     {
-        if(walk->schedData.next==nullptr) break;
-        if(walk->schedData.next->flags.isDeleted())
+        //When we get here, head is not null and does not need to be deleted
+        Thread *walk=head;
+        for(;;)
         {
-            Thread *toBeDeleted=walk->schedData.next;
-            walk->schedData.next=walk->schedData.next->schedData.next;
-            void *base=toBeDeleted->watermark;
-            toBeDeleted->~Thread();
-            free(base); //Delete ALL thread memory
-        } else walk=walk->schedData.next;
+            if(walk->schedData.next==nullptr) break;
+            if(walk->schedData.next->flags.isDeleted())
+            {
+                Thread *toBeDeleted=walk->schedData.next;
+                walk->schedData.next=walk->schedData.next->schedData.next;
+                void *base=toBeDeleted->watermark;
+                toBeDeleted->~Thread();
+                free(base); //Delete ALL thread memory
+            } else walk=walk->schedData.next;
+        }
     }
 
     // Handle NRT tasks (headNRT circular list)
