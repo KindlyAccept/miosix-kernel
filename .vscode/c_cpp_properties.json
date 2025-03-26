@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/kindlyaccept/miosix-kernel/miosix",
+                "/home/kindlyaccept/miosix-kernel/miosix/arch/cortexM0_stm32f0/common",
+                "/home/kindlyaccept/miosix-kernel/miosix/arch/common",
+                "/home/kindlyaccept/miosix-kernel/miosix/interfaces"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ],
+    "version": 4
+}

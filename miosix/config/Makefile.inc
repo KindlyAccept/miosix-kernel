@@ -46,7 +46,7 @@
 #OPT_BOARD := stm32f407vg_thermal_test_chip
 #OPT_BOARD := stm32f205_generic
 #OPT_BOARD := stm32f103cx_generic
-#OPT_BOARD := stm32f072rb_stm32f0discovery
+OPT_BOARD := stm32f072rb_stm32f0discovery
 #OPT_BOARD := stm32f100cx_generic
 #OPT_BOARD := stm32f303vc_stm32f3discovery
 #OPT_BOARD := stm32f100c8_vaisala_rs41
