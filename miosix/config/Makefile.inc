@@ -2759,7 +2759,8 @@ else ifeq ($(ARCH),cortexM0_stm32f0)
         ARCH_SRC :=                                  \
         $(BOARD_INC)/core/stage_1_boot.cpp           \
         $(BOARD_INC)/interfaces-impl/bsp.cpp         \
-        arch/common/core/stm32_32bit_os_timer.cpp
+        arch/common/core/stm32_32bit_os_timer.cpp    \
+        $(BOARD_INC)/interfaces-impl/i2c_impl.cpp
 
         ## Add a #define to allow querying board name
         CFLAGS_BASE   += -D_BOARD_STM32F072RB_DISCO -DSTM32F072xB

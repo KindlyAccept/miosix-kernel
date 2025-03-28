@@ -9,7 +9,9 @@
                 "/home/kindlyaccept/miosix-kernel/miosix/arch/common",
                 "/home/kindlyaccept/miosix-kernel/miosix/interfaces"
             ],
-            "defines": [],
+            "defines": [
+                "STM32F072xB"
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++14",

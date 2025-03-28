@@ -34,6 +34,7 @@
 #include <interfaces/gpio.h>
 #include <interfaces/delays.h>
 #include <interfaces/bsp.h>
+#include <interfaces/i2c.h>
 /* Miosix kernel */
 #include <kernel/kernel.h>
 #include <kernel/sync.h>
