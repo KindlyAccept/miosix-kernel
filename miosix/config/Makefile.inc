@@ -46,7 +46,7 @@
 #OPT_BOARD := stm32f407vg_thermal_test_chip
 #OPT_BOARD := stm32f205_generic
 #OPT_BOARD := stm32f103cx_generic
-#OPT_BOARD := stm32f072rb_stm32f0discovery
+OPT_BOARD := stm32f072rb_stm32f0discovery
 #OPT_BOARD := stm32f100cx_generic
 #OPT_BOARD := stm32f303vc_stm32f3discovery
 #OPT_BOARD := stm32f100c8_vaisala_rs41
@@ -2759,8 +2759,9 @@ else ifeq ($(ARCH),cortexM0_stm32f0)
         ARCH_SRC :=                                  \
         $(BOARD_INC)/core/stage_1_boot.cpp           \
         $(BOARD_INC)/interfaces-impl/bsp.cpp         \
-        arch/common/core/stm32_32bit_os_timer.cpp
-
+        arch/common/core/stm32_32bit_os_timer.cpp    \
+        arch/common/drivers/stm32f0_i2c.cpp          
+        
         ## Add a #define to allow querying board name
         CFLAGS_BASE   += -D_BOARD_STM32F072RB_DISCO -DSTM32F072xB
         CXXFLAGS_BASE += -D_BOARD_STM32F072RB_DISCO -DSTM32F072xB
