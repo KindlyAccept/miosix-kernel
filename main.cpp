@@ -1,45 +1,52 @@
 #include <miosix.h>
-#include "arch/common/drivers/stm32f0_i2c.h" // 你的 I2C 驱动头文件
+#include "arch/common/drivers/stm32f0_i2c.h" 
 
 using namespace miosix;
 
 int main()
 {
-    // 配置 GPIOB 引脚：PB6 (SCL), PB7 (SDA)
+    // configure GPIOB: PB6(SCL), PB7(SDA)
     GpioPin sda(GPIOB_BASE, 7); // PB7
     GpioPin scl(GPIOB_BASE, 6); // PB6
 
-    // 初始化 I2C1Master，频率设置为 100kHz
+    // initialize I2C1Master, frequency 100kHz
     I2C1Master i2c(sda, scl, 100); // 100kHz
 
     iprintf("[INFO] I2C init success\n");
 
-    for(int deviceAddr = 0x03; deviceAddr < 0x77; deviceAddr++)
+    // write data to device 0x50
+    const int txAddr = 0x56;
+    // unsigned char txData[16] = {
+    //     0x00, 0x11, 0x22, 0x33,
+    //     0x44, 0x55, 0x66, 0x77,
+    //     0x88, 0x99, 0xAA, 0xBB,
+    //     0xCC, 0xDD, 0xEE, 0xFF
+    // };
+    unsigned char txData[1] = {0xAB};
+
+    bool txSuccess = i2c.send(txAddr, txData, sizeof(txData));
+    iprintf("[INFO] write to 0x%02X: %s\n", txAddr, txSuccess ? "success" : "failed");
+
+    Thread::sleep(100);
+
+    // receive data from device 0x68
+    const int rxAddr = 0x68;
+    unsigned char rxData[8] = {0};
+
+    bool rxSuccess = i2c.recv(rxAddr, rxData, sizeof(rxData));
+    if(rxSuccess)
     {
-        // 模拟发送数据
-        unsigned char txData[2] = {0x00, 0xAA}; // 写寄存器 0x00 值为 0xAA
-        bool success = i2c.send(deviceAddr, txData, sizeof(txData));
-
-        iprintf("[INFO] write to device 0x%02X:%s\n", deviceAddr, success ? "success" : "failed");
-
-        Thread::sleep(10);
+        iprintf("[INFO] read from 0x%02X:", rxAddr);
+        for(int i = 0; i < sizeof(rxData); i++)
+            iprintf(" 0x%02X", rxData[i]);
+        iprintf("\n");
     }
-
-    for(int deviceAddr = 0x03; deviceAddr < 0x77; deviceAddr++) 
-    {
-        // 模拟读取数据
-        unsigned char rxData[1] = {0};
-        bool success = i2c.recv(deviceAddr, rxData, 1);
-    
-    if(success)
-        iprintf("[INFO] read data:0x%02X\n", rxData[0]);
     else
-            iprintf("[WARN] read data failed\n");
-
-        Thread::sleep(10);
+    {
+        iprintf("[WARN] read from 0x%02X failed\n", rxAddr);
     }
 
-    // 主循环：LED 闪烁表示系统活着
+    // main loop: LED flashing indicates system active
     for(;;)
     {
         ledOn();
