@@ -14,36 +14,62 @@ int main()
 
     iprintf("[INFO] I2C init success\n");
 
-    // write data to device 0x50
-    const int txAddr = 0x56;
-    // unsigned char txData[16] = {
-    //     0x00, 0x11, 0x22, 0x33,
-    //     0x44, 0x55, 0x66, 0x77,
-    //     0x88, 0x99, 0xAA, 0xBB,
-    //     0xCC, 0xDD, 0xEE, 0xFF
-    // };
-    unsigned char txData[1] = {0xAB};
+    // define three addresses
+    const int addresses[] = {0x56, 0x58, 0x60};
+    const int numAddresses = 3;
+    
+    // prepare data to send: 0x11, 0x22, 0x33, ..., 0xFF
+    unsigned char txData[16] = {
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+        0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
+    };
 
-    bool txSuccess = i2c.send(txAddr, txData, sizeof(txData));
-    iprintf("[INFO] write to 0x%02X: %s\n", txAddr, txSuccess ? "success" : "failed");
+    // send data to three addresses
+    for(int addrIndex = 0; addrIndex < numAddresses; addrIndex++)
+    {
+        int txAddr = addresses[addrIndex];
+        
+        // send data byte by byte, ensure even if the write operation "fails", the complete data sequence is sent
+        iprintf("[INFO] sending to 0x%02X:", txAddr);
+        for(int i = 0; i < sizeof(txData); i++)
+        {
+            unsigned char singleByte = txData[i];
+            bool txSuccess = i2c.send(txAddr, &singleByte, 1);
+            iprintf(" 0x%02X", singleByte);
+            
+            // short delay to ensure signal stability
+            Thread::sleep(5);
+        }
+        iprintf(" (complete sequence sent)\n");
+        
+        // short delay
+        Thread::sleep(50);
+    }
 
     Thread::sleep(100);
 
-    // receive data from device 0x68
-    const int rxAddr = 0x68;
+    // listen to the reply from three addresses
     unsigned char rxData[8] = {0};
-
-    bool rxSuccess = i2c.recv(rxAddr, rxData, sizeof(rxData));
-    if(rxSuccess)
+    
+    for(int addrIndex = 0; addrIndex < numAddresses; addrIndex++)
     {
-        iprintf("[INFO] read from 0x%02X:", rxAddr);
-        for(int i = 0; i < sizeof(rxData); i++)
-            iprintf(" 0x%02X", rxData[i]);
-        iprintf("\n");
-    }
-    else
-    {
-        iprintf("[WARN] read from 0x%02X failed\n", rxAddr);
+        int rxAddr = addresses[addrIndex];
+        bool rxSuccess = i2c.recv(rxAddr, rxData, sizeof(rxData));
+        
+        if(rxSuccess)
+        {
+            iprintf("[INFO] read from 0x%02X:", rxAddr);
+            for(int i = 0; i < sizeof(rxData); i++)
+                iprintf(" 0x%02X", rxData[i]);
+            iprintf("\n");
+        }
+        else
+        {
+            iprintf("[WARN] read from 0x%02X failed\n", rxAddr);
+        }
+        
+        // short delay
+        Thread::sleep(50);
     }
 
     // main loop: LED flashing indicates system active
